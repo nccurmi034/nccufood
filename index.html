@@ -268,7 +268,7 @@
   <div id="cartItems" class="flex-1 overflow-y-auto px-6 py-4 space-y-4"></div>
   <div class="border-t border-cream-200 px-6 py-5 space-y-3">
     <div class="flex justify-between text-sm"><span>小計</span><span id="subtotal">NT$0</span></div>
-    <div class="flex justify-between text-sm text-wood-600"><span>運費（滿 NT$800 免運）</span><span id="shipping">NT$0</span></div>
+    <div class="flex justify-between text-sm text-wood-600"><span>運費（宅配滿 NT$800 免運）</span><span id="shipping">NT$0</span></div>
     <div class="flex justify-between font-bold text-lg"><span>總金額</span><span id="total" class="text-amberx-600">NT$0</span></div>
     <button id="checkoutBtn" class="w-full py-3.5 rounded-full bg-wood-800 hover:bg-wood-700 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed">前往結帳</button>
   </div>
@@ -296,8 +296,14 @@
         <input id="addrField" name="address" placeholder="宅配地址" class="hidden w-full rounded-xl border border-cream-200 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amberx-500">
         <textarea name="note" rows="2" placeholder="備註（例：不要辣、餐具需求）" class="w-full rounded-xl border border-cream-200 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amberx-500"></textarea>
       </div>
-      <div class="flex justify-between font-bold text-lg mt-5"><span>應付金額</span><span id="checkoutTotal" class="text-amberx-600"></span></div>
-      <button class="w-full mt-4 py-3.5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold">送出訂單</button>
+      <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden">
+      <div class="mt-5 space-y-1 text-sm">
+        <div class="flex justify-between"><span>商品小計</span><span id="checkoutSub"></span></div>
+        <div class="flex justify-between text-wood-600"><span>運費</span><span id="checkoutShip"></span></div>
+        <div class="flex justify-between font-bold text-lg pt-1"><span>應付金額</span><span id="checkoutTotal" class="text-amberx-600"></span></div>
+      </div>
+      <p id="submitErr" class="hidden mt-3 text-sm text-red-600" role="alert"></p>
+      <button id="submitBtn" class="w-full mt-4 py-3.5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold disabled:opacity-60 disabled:cursor-wait">送出訂單</button>
     </form>
     <!-- Success view -->
     <div id="successView" class="hidden text-center py-6">
@@ -335,6 +341,12 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const money = n => 'NT$' + n.toLocaleString();
   const IMG = id => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=800&q=80`;
+
+  /* ---------- 訂單串接 Google Sheet（Apps Script Web App） ----------
+     部署 gas/Code.gs 後，把「網頁應用程式」網址貼在下方（以 /exec 結尾）。
+     留空 = 示範模式：不送出資料，只顯示成功畫面。 */
+  const SHEETS_ENDPOINT = '';
+  const FREE_SHIP = 800, SHIP_FEE = 120;      // 需與 gas/Code.gs 的 CFG 一致（實際金額以 GAS 重算為準）
 
   /* ---------- Data ---------- */
   const categories = ['招牌鍋貼', '精選水餃', '湯品/飲料', '經典小菜'];
@@ -443,9 +455,9 @@
     toast(`已加入：${findItem(id).name}`);
     const badge = $('#cartBadge'); badge.animate([{ transform: 'scale(1.6)' }, { transform: 'scale(1)' }], { duration: 300 });
   }
-  const totals = () => {
+  const totals = (method = '外帶') => {
     const sub = cart.reduce((s, c) => s + findItem(c.id).price * c.qty, 0);
-    const ship = sub === 0 || sub >= 800 ? 0 : 120;
+    const ship = method === '宅配' && sub > 0 && sub < FREE_SHIP ? SHIP_FEE : 0;
     return { sub, ship, total: sub + ship };
   };
   function renderCart() {
@@ -474,8 +486,8 @@
     }
     const t = totals();
     $('#subtotal').textContent = money(t.sub);
-    $('#shipping').textContent = money(t.ship);
-    $('#total').textContent = money(t.total);
+    $('#shipping').textContent = '依取餐方式計算';
+    $('#total').textContent = money(t.sub);
     $('#checkoutBtn').disabled = !cart.length;
   }
   $('#cartItems').addEventListener('click', e => {
@@ -495,28 +507,66 @@
   const modal = $('#checkoutModal');
   const showModal = m => { m.classList.remove('hidden'); m.classList.add('flex'); };
   const hideModal = m => { m.classList.add('hidden'); m.classList.remove('flex'); };
+  const currentMethod = () => $('input[name=method]:checked').value;
+  function refreshCheckoutTotals() {
+    const t = totals(currentMethod());
+    $('#checkoutSub').textContent = money(t.sub);
+    $('#checkoutShip').textContent = t.ship ? money(t.ship) : (currentMethod() === '宅配' ? '免運' : '—');
+    $('#checkoutTotal').textContent = money(t.total);
+  }
   $('#checkoutBtn').onclick = () => {
     if (!cart.length) return;
     closeCart();
     $('#checkoutForm').classList.remove('hidden'); $('#successView').classList.add('hidden');
-    $('#checkoutTotal').textContent = money(totals().total);
+    $('#submitErr').classList.add('hidden');
+    refreshCheckoutTotals();
     showModal(modal);
   };
   $$('input[name=method]').forEach(r => r.onchange = () => {
-    const home = $('input[name=method]:checked').value === '宅配';
+    const home = currentMethod() === '宅配';
     $('#addrField').classList.toggle('hidden', !home);
     $('#addrField').required = home;
+    refreshCheckoutTotals();
   });
   $('#closeCheckout').onclick = () => hideModal(modal);
   modal.addEventListener('click', e => { if (e.target === modal) hideModal(modal); });
-  $('#checkoutForm').addEventListener('submit', e => {
+
+  /* 送出訂單：POST 到 Apps Script，成功後才清空購物車 */
+  async function sendOrder(payload) {
+    if (!SHEETS_ENDPOINT) {                       // 示範模式
+      await new Promise(r => setTimeout(r, 400));
+      return { ok: true, orderNo: 'DEMO' + Date.now().toString().slice(-6), demo: true };
+    }
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 25000);
+    try {
+      // 使用 text/plain 屬於「簡單請求」，不會觸發 CORS 預檢，Apps Script 才收得到
+      const res = await fetch(SHEETS_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: ctl.signal });
+      return await res.json();
+    } finally { clearTimeout(timer); }
+  }
+  $('#checkoutForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const f = new FormData(e.target);
-    $('#orderNo').textContent = 'JS' + Date.now().toString().slice(-8);
-    $('#successMsg').textContent = `${f.get('name')} 您好，我們已收到您的「${f.get('method')}」訂單，確認信將寄至 ${f.get('email')}。`;
-    $('#checkoutForm').classList.add('hidden'); $('#successView').classList.remove('hidden');
-    cart = []; save(); renderCart(); e.target.reset();
-    $('#addrField').classList.add('hidden'); $('#addrField').required = false;
+    const form = e.target, f = new FormData(form), btn = $('#submitBtn'), err = $('#submitErr');
+    const payload = {
+      website: f.get('website'), method: f.get('method'), name: f.get('name'), phone: f.get('phone'), email: f.get('email'),
+      address: f.get('address') || '', note: f.get('note') || '', items: cart.map(c => ({ id: c.id, qty: c.qty }))
+    };
+    err.classList.add('hidden'); btn.disabled = true; btn.textContent = '送出中…';
+    try {
+      const res = await sendOrder(payload);
+      if (!res || !res.ok) throw new Error((res && res.error) || '伺服器回應異常');
+      $('#orderNo').textContent = res.orderNo;
+      $('#successMsg').textContent = res.demo
+        ? '（示範模式：尚未串接試算表，訂單沒有送出）'
+        : `${payload.name} 您好，我們已收到您的「${payload.method}」訂單，確認信將寄至 ${payload.email}。`;
+      $('#checkoutForm').classList.add('hidden'); $('#successView').classList.remove('hidden');
+      cart = []; save(); renderCart(); form.reset();
+      $('#addrField').classList.add('hidden'); $('#addrField').required = false;
+    } catch (ex) {
+      console.warn('[訂單] 送出失敗', ex);
+      err.textContent = '訂單送出失敗：' + (ex.name === 'AbortError' ? '連線逾時，請稍後再試' : ex.message) + '。購物車內容已保留，可再按一次送出。';
+      err.classList.remove('hidden');
+    } finally { btn.disabled = false; btn.textContent = '送出訂單'; }
   });
   $('#successClose').onclick = () => hideModal(modal);
 

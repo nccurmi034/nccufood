@@ -97,13 +97,34 @@ fieldset:disabled{opacity:.55;pointer-events:none}
 .btn.primary{background:linear-gradient(135deg,#4f8cff,#3ddc97);border:none;color:#08121f}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 
-#webgl-error{position:fixed;inset:0;display:none;place-items:center;z-index:50;text-align:center;padding:30px;font-size:15px;color:var(--sub)}
+#webgl-error{position:fixed;inset:0;display:none;place-items:center;z-index:15;text-align:center;padding:30px;font-size:15px;color:var(--sub)}
+
+.booking-link {
+  position: fixed;
+  right: calc(18px + env(safe-area-inset-right, 0px));
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #1a1030;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.booking-link:hover { filter: brightness(1.1); }
+.booking-link:focus-visible { outline: 2px solid var(--txt); outline-offset: 3px; }
 
 /* ===== RWD：窄螢幕改為底部面板 ===== */
 @media (max-width:760px){
   :root{--side:100%}
   header{height:52px;padding:0 14px}header h1{font-size:16px}header .sub{display:none}
-  #sidebar{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:48vh;padding:14px;gap:12px;border-radius:18px}
+  #sidebar{top:auto;left:8px;right:8px;bottom:calc(76px + env(safe-area-inset-bottom, 0px));width:auto;max-height:min(48vh, calc(100% - 128px - env(safe-area-inset-bottom, 0px)));padding:14px;gap:12px;border-radius:18px}
   #spin-btn{position:sticky;bottom:0;padding:13px}
   #cand-list{max-height:60px}
 }
@@ -157,6 +178,8 @@ fieldset:disabled{opacity:.55;pointer-events:none}
     <div class="note">距離為自南港軟體園區（三重路）起算的估計步行距離；冷氣與價位為預設資料，可於原始碼頂端 RESTAURANTS 陣列修改。</div>
   </aside>
 </div>
+
+<a class="booking-link" href="https://calendar.app.google/h1y5Gq49ZpJyVqocA">預約</a>
 
 <!-- 結果彈窗層 -->
 <div id="result-modal" class="hidden">

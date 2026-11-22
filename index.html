@@ -683,10 +683,10 @@
       torso: new THREE.CylinderGeometry(.32, .36, 1.0, 14), head: new THREE.SphereGeometry(.27, 16, 12),
       hair: new THREE.SphereGeometry(.285, 14, 8, 0, Math.PI * 2, 0, Math.PI * .55),
       leg: new THREE.CylinderGeometry(.115, .1, 1.1, 10), arm: new THREE.CylinderGeometry(.085, .075, .85, 8),
-      bag: new THREE.BoxGeometry(.28, .36, .16), shadow: new THREE.CircleGeometry(.5, 16)
+      bag: new THREE.BoxGeometry(.28, .36, .16), shoe: new THREE.BoxGeometry(.24, .13, .38), shadow: new THREE.CircleGeometry(.5, 16)
     };
     const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .35, depthWrite: false });
-    const skinMat = std(0xf0c9a0), legMat = std(0x2b1b12), legMat2 = std(0x3e2a1d);
+    const shoeMat = std(0x1a1010), skinMat = std(0xf0c9a0), legMat = std(0x2b1b12), legMat2 = std(0x3e2a1d);
 
     function makePerson() {
       const cloth = std(clothes[Math.floor(Math.random() * clothes.length)]);
@@ -696,6 +696,7 @@
       const hair = new THREE.Mesh(G.hair, std(hairs[Math.floor(Math.random() * hairs.length)])); hair.position.y = 2.57; hair.rotation.x = -.25; body.add(hair);
       const mkLimb = (geo, mat, x, y, len) => { const p = new THREE.Group(); p.position.set(x, y, 0); const m = new THREE.Mesh(geo, mat); m.position.y = -len / 2; p.add(m); body.add(p); return p; };
       const legL = mkLimb(G.leg, legMat, -.15, 1.25, 1.1), legR = mkLimb(G.leg, legMat2, .15, 1.25, 1.1);
+      [legL, legR].forEach(l => { const sh = new THREE.Mesh(G.shoe, shoeMat); sh.position.set(0, -1.07, .09); l.add(sh); });   // 鞋子
       const armL = mkLimb(G.arm, cloth, -.43, 2.17, .85), armR = mkLimb(G.arm, cloth, .43, 2.17, .85);
       if (Math.random() < .45) { const b = new THREE.Mesh(G.bag, std(0xe8812c)); b.position.set(.05, -.95, .05); armR.add(b); }
       const sh = new THREE.Mesh(G.shadow, shadowMat); sh.rotation.x = -Math.PI / 2; sh.position.y = .03; root.add(sh);
@@ -727,9 +728,9 @@
         if (d <= st) { pos.x = t.x; pos.z = t.y; if (++p.i >= p.wp.length) { removePerson(p); continue; } }
         else { pos.x += dx / d * st; pos.z += dz / d * st; let diff = Math.atan2(dx, dz) - p.yaw; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); p.yaw += diff * Math.min(1, dt * 9); p.root.rotation.y = p.yaw; }
         p.ph += dt * p.speed * 3.6;
-        const sw = Math.sin(p.ph) * .75;
+        const sw = Math.sin(p.ph) * .55;
         p.legL.rotation.x = sw; p.legR.rotation.x = -sw; p.armL.rotation.x = -sw * .8; p.armR.rotation.x = sw * .8;
-        p.body.position.y = Math.abs(Math.cos(p.ph)) * .07;
+        p.body.position.y = -.2 + Math.abs(Math.cos(p.ph)) * .05;   // 整體下移，讓腳踩地
       }
     }
 

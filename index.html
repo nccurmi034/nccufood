@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI3 南港美食 3D 午餐選擇器</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ===== 1. CSS Reset & Canvas 全螢幕佈局 ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg1:#0b1020;--bg2:#1a1240;
+  --glass:rgba(255,255,255,.08);--glass-b:rgba(255,255,255,.18);
+  --txt:#f3f5ff;--sub:#aab2d5;--accent:#ffb547;--accent2:#ff5d8f;--ok:#3ddc97;
+  --side:340px;
+  --font:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC",system-ui,sans-serif;
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--txt);
+  background:radial-gradient(ellipse at 70% 30%,#2a1d63 0%,var(--bg2) 35%,var(--bg1) 80%)}
+#canvas-container{position:fixed;inset:0;z-index:0}
+#canvas-container canvas{display:block;touch-action:none;cursor:grab}
+#canvas-container canvas:active{cursor:grabbing}
+
+/* ===== 2. 控制面板 UI（Glassmorphism） ===== */
+#ui-container{position:fixed;inset:0;z-index:10;pointer-events:none}
+header{position:absolute;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:12px;
+  padding:0 22px;pointer-events:auto;background:linear-gradient(180deg,rgba(10,12,30,.75),rgba(10,12,30,0));}
+header .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#1a1030;letter-spacing:.5px}
+header h1{font-size:19px;font-weight:700;letter-spacing:1px}
+header .sub{font-size:12px;color:var(--sub);margin-left:4px}
+.glass{background:var(--glass);border:1px solid var(--glass-b);backdrop-filter:blur(16px) saturate(140%);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+#sidebar{position:absolute;top:72px;left:18px;bottom:18px;width:var(--side);border-radius:20px;padding:20px 20px 18px;
+  pointer-events:auto;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+#sidebar::-webkit-scrollbar{width:6px}#sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
+.sec-title{font-size:13px;color:var(--sub);letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg input,.chips input,.switch input{display:none}
+.seg label{text-align:center;padding:9px 4px;border-radius:11px;font-size:13px;cursor:pointer;line-height:1.3;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:.2s}
+.seg label small{display:block;font-size:10px;color:var(--sub);margin-top:2px}
+.seg input:checked+label{background:linear-gradient(135deg,rgba(255,181,71,.9),rgba(255,93,143,.9));color:#1a1030;border-color:transparent;font-weight:700}
+.seg input:checked+label small{color:#3a1f40}
+.switch label{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:14px}
+.switch .knob{width:42px;height:24px;border-radius:12px;background:rgba(255,255,255,.18);position:relative;transition:.2s;flex:none}
+.switch .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked+label .knob{background:var(--ok)}
+.switch input:checked+label .knob::after{left:21px}
+.chips{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.chips label{display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:11px;cursor:pointer;font-size:13px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:.2s}
+.chips label i{width:16px;text-align:center;color:var(--sub)}
+.chips input:checked+label{background:rgba(61,220,151,.16);border-color:rgba(61,220,151,.6)}
+.chips input:checked+label i{color:var(--ok)}
+.mini-row{display:flex;gap:8px;margin-top:6px}
+.mini-row button{flex:1;background:none;border:1px dashed rgba(255,255,255,.22);color:var(--sub);border-radius:9px;padding:5px;font-size:12px;cursor:pointer;font-family:inherit}
+.mini-row button:hover{color:var(--txt);border-color:rgba(255,255,255,.5)}
+#count-box{border-radius:14px;padding:12px 14px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.08)}
+#count-box .num{font-size:28px;font-weight:800;color:var(--accent)}
+#count-box .lbl{font-size:13px;color:var(--sub)}
+#count-box.zero .num{color:#ff6b6b}
+#hint{font-size:12px;color:#ff8f8f;margin-top:4px;display:none}
+#count-box.zero #hint{display:block}
+#cand-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;max-height:110px;overflow-y:auto}
+#cand-list span{font-size:11px;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,.07);color:#d7dcf5}
+#cand-list span.hit{background:var(--accent);color:#1a1030;font-weight:700}
+#spin-btn{margin-top:auto;border:none;border-radius:15px;padding:15px;font-size:17px;font-weight:800;letter-spacing:2px;cursor:pointer;
+  font-family:inherit;color:#1a1030;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 8px 24px rgba(255,93,143,.35);transition:transform .15s,filter .2s,opacity .2s}
+#spin-btn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08)}
+#spin-btn:disabled{opacity:.38;cursor:not-allowed;box-shadow:none;filter:grayscale(.6)}
+.note{font-size:10.5px;color:rgba(170,178,213,.7);line-height:1.5}
+fieldset{border:none}
+fieldset:disabled{opacity:.55;pointer-events:none}
+
+/* ===== 3. 結果彈窗與按鈕樣式 ===== */
+#result-modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(5,6,18,.45);
+  transition:opacity .3s;opacity:1}
+#result-modal.hidden{opacity:0;pointer-events:none}
+#result-modal .card{width:min(420px,92vw);border-radius:24px;padding:26px 24px 22px;text-align:center;
+  transform:translateY(0) scale(1);transition:transform .35s cubic-bezier(.2,1.4,.4,1);background:rgba(28,22,70,.72)}
+#result-modal.hidden .card{transform:translateY(30px) scale(.9)}
+.card .badge{display:inline-block;font-size:12px;letter-spacing:2px;color:#1a1030;background:var(--accent);padding:4px 12px;border-radius:20px;font-weight:700}
+.card h2{font-size:26px;margin:14px 0 8px;line-height:1.35}
+.card .dist{color:var(--sub);font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.card .addr{color:rgba(170,178,213,.8);font-size:12px;margin-top:6px}
+.card .tags{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:16px 0 20px}
+.card .tags span{font-size:12px;padding:5px 11px;border-radius:20px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15)}
+.card .tags span.ac{border-color:rgba(61,220,151,.6);color:#7ff0bf}
+.card .tags span.noac{border-color:rgba(255,140,100,.6);color:#ffb39a}
+.card .actions{display:grid;gap:9px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:13px;font-size:15px;font-weight:700;
+  cursor:pointer;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);text-decoration:none;font-family:inherit;transition:.2s}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn.primary{background:linear-gradient(135deg,#4f8cff,#3ddc97);border:none;color:#08121f}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+#webgl-error{position:fixed;inset:0;display:none;place-items:center;z-index:50;text-align:center;padding:30px;font-size:15px;color:var(--sub)}
+
+/* ===== RWD：窄螢幕改為底部面板 ===== */
+@media (max-width:760px){
+  :root{--side:100%}
+  header{height:52px;padding:0 14px}header h1{font-size:16px}header .sub{display:none}
+  #sidebar{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:48vh;padding:14px;gap:12px;border-radius:18px}
+  #spin-btn{position:sticky;bottom:0;padding:13px}
+  #cand-list{max-height:60px}
+}
+</style>
+<!-- 引進 Three.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<!-- 3D 畫布容器 -->
+<div id="canvas-container"></div>
+
+<!-- 前端篩選 UI 層 -->
+<div id="ui-container">
+  <header>
+    <div class="logo">AI3</div>
+    <h1>AI3 南港午餐 3D 決策器</h1>
+    <span class="sub">以南港軟體園區為中心・半徑 2 公里</span>
+  </header>
+
+  <aside id="sidebar" class="glass">
+    <fieldset id="filters">
+      <div>
+        <div class="sec-title"><i class="fa-solid fa-person-walking"></i>距離選擇</div>
+        <div class="seg">
+          <input type="radio" name="dist" id="d500" value="500"><label for="d500">500m<small>園區內・步行5分</small></label>
+          <input type="radio" name="dist" id="d1000" value="1000"><label for="d1000">1km<small>展覽館周邊</small></label>
+          <input type="radio" name="dist" id="d2000" value="2000" checked><label for="d2000">2km<small>南港站/研究院路</small></label>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="sec-title"><i class="fa-solid fa-snowflake"></i>環境條件</div>
+        <div class="switch">
+          <input type="checkbox" id="ac" checked>
+          <label for="ac"><span>必須有冷氣</span><span class="knob"></span></label>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="sec-title"><i class="fa-solid fa-utensils"></i>種類（複選）</div>
+        <div class="chips" id="food-chips"></div>
+        <div class="mini-row"><button type="button" id="all-on">全選</button><button type="button" id="all-off">全不選</button></div>
+      </div>
+    </fieldset>
+
+    <div id="count-box">
+      <span class="num" id="count">0</span> <span class="lbl">家餐廳符合條件</span>
+      <div id="hint"><i class="fa-solid fa-circle-exclamation"></i> 沒有符合的餐廳，請放寬距離或種類條件。</div>
+      <div id="cand-list"></div>
+    </div>
+
+    <button id="spin-btn"><i class="fa-solid fa-dice"></i> 決定吃什麼！</button>
+    <div class="note">距離為自南港軟體園區（三重路）起算的估計步行距離；冷氣與價位為預設資料，可於原始碼頂端 RESTAURANTS 陣列修改。</div>
+  </aside>
+</div>
+
+<!-- 結果彈窗層 -->
+<div id="result-modal" class="hidden">
+  <div class="card glass">
+    <span class="badge">今天就吃這家</span>
+    <h2 id="r-name">—</h2>
+    <div class="dist" id="r-dist"></div>
+    <div class="addr" id="r-addr"></div>
+    <div class="tags" id="r-tags"></div>
+    <div class="actions">
+      <a class="btn primary" id="r-map" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-location-arrow"></i>開啟 Google 地圖導航</a>
+      <div class="btn-row">
+        <button class="btn" id="r-again"><i class="fa-solid fa-rotate-right"></i>不滿意，再抽</button>
+        <button class="btn" id="r-refilter"><i class="fa-solid fa-sliders"></i>重新篩選</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="webgl-error">您的瀏覽器未啟用 WebGL，或 Three.js 無法從 CDN 載入。<br>請確認網路連線並使用最新版 Chrome / Edge / Safari / Firefox。</div>
+
+<script>
+/* =========================================================
+ * 1. 餐廳資料庫（AI3／南港軟體園區 方圓 2km 內清單）
+ *    distanceMeters：自南港軟體園區（三重路）起算之估計步行距離
+ *    hasAC / priceRange：預設值，請依實際情況修正
+ * ========================================================= */
+const FOOD_TYPES = [
+  {key:"麵",        icon:"fa-bowl-food"},
+  {key:"飯",        icon:"fa-bowl-rice"},
+  {key:"鍋貼/水餃", icon:"fa-cookie"},
+  {key:"漢堡/美式", icon:"fa-burger"},
+  {key:"小吃/其他", icon:"fa-pepper-hot"},
+  {key:"健康餐/沙拉", icon:"fa-leaf"}
+];
+
+const RESTAURANTS = [
+  {id:"rest_001",name:"樂法 Le Phu",distanceMeters:300,hasAC:true,categories:["漢堡/美式","健康餐/沙拉"],priceRange:"$",address:"南港軟體園區周邊"},
+  {id:"rest_002",name:"朱記餡餅粥店 (南港環球店)",distanceMeters:1200,hasAC:true,categories:["麵","飯","鍋貼/水餃"],priceRange:"$$",address:"南港環球購物中心（南港車站）"},
+  {id:"rest_003",name:"欣葉小聚 (南港)",distanceMeters:500,hasAC:true,categories:["飯"],priceRange:"$$",address:"台北市南港區經貿二路166號1樓（中信園區A棟）"},
+  {id:"rest_004",name:"麻布茶房 南港中信店",distanceMeters:500,hasAC:true,categories:["飯","健康餐/沙拉"],priceRange:"$$",address:"台北市南港區經貿二路186-1號（中信C棟1樓）"},
+  {id:"rest_005",name:"PappaRich 金爸爸 (南港中信)",distanceMeters:500,hasAC:true,categories:["飯","麵"],priceRange:"$$",address:"南港中信金融園區1樓"},
+  {id:"rest_006",name:"涮嘴 南港店",distanceMeters:700,hasAC:true,categories:["小吃/其他","飯"],priceRange:"$",address:"南港軟體園區周邊"},
+  {id:"rest_007",name:"餡老滿 南港旗艦店",distanceMeters:900,hasAC:true,categories:["鍋貼/水餃","麵"],priceRange:"$$",address:"台北市南港區經貿二路66號2樓之2"},
+  {id:"rest_008",name:"漢來東方樓",distanceMeters:1000,hasAC:true,categories:["飯"],priceRange:"$$$",address:"台北市南港區經貿一路168號3樓（台北漢來大飯店）"},
+  {id:"rest_009",name:"這一小鍋 (南港 CITYLINK)",distanceMeters:1300,hasAC:true,categories:["小吃/其他","飯"],priceRange:"$$",address:"南港 CITYLINK A棟3樓"},
+  {id:"rest_010",name:"Lady Nara (南港 CITYLINK)",distanceMeters:1300,hasAC:true,categories:["飯","麵"],priceRange:"$$",address:"南港 CITYLINK C棟10樓"},
+  {id:"rest_011",name:"高麗園 韓式銅盤烤肉",distanceMeters:1300,hasAC:true,categories:["飯","小吃/其他"],priceRange:"$$$",address:"南港 CITYLINK C棟7樓"},
+  {id:"rest_012",name:"Coppii Lumii 冉冉生活",distanceMeters:1300,hasAC:true,categories:["麵","健康餐/沙拉"],priceRange:"$$",address:"老爺行旅旁1樓（南港車站周邊）"},
+  {id:"rest_013",name:"南港老張燒餅店",distanceMeters:1400,hasAC:false,categories:["小吃/其他"],priceRange:"$",address:"台北市南港區忠孝東路七段602號"},
+  {id:"rest_014",name:"北大荒水餃店",distanceMeters:1400,hasAC:false,categories:["鍋貼/水餃","麵"],priceRange:"$",address:"台北市南港區南港路一段201號"},
+  {id:"rest_015",name:"Neverland Noodle Bar 麵吧",distanceMeters:1500,hasAC:true,categories:["麵","飯"],priceRange:"$",address:"台北市南港區南港路一段271號"},
+  {id:"rest_016",name:"Bogart's Smokehouse",distanceMeters:1500,hasAC:true,categories:["漢堡/美式"],priceRange:"$$",address:"台北市南港區南港路一段255號"},
+  {id:"rest_017",name:"春月日式食堂",distanceMeters:1600,hasAC:true,categories:["飯"],priceRange:"$$",address:"台北市南港區南港路一段143號"},
+  {id:"rest_018",name:"板前屋炭烤鰻魚飯",distanceMeters:1800,hasAC:true,categories:["飯"],priceRange:"$$$",address:"台北市南港區研究院路一段88號"}
+].map(r => ({...r, googleMapUrl: r.googleMapUrl ||
+  "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(r.name.replace(/\(.*?\)/g,"") + " 台北市南港區")}));
+
+/* =========================================================
+ * 2. Three.js 場景、相機、渲染器、燈光初始化
+ * ========================================================= */
+if (typeof THREE === "undefined") { document.getElementById("webgl-error").style.display = "grid"; throw new Error("Three.js 未載入"); }
+
+const container = document.getElementById("canvas-container");
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+} catch (e) { document.getElementById("webgl-error").style.display = "grid"; throw e; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const FOV = 38;
+const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 12);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(4, 6, 10);
+dirLight.castShadow = true;
+scene.add(dirLight);
+const rimLight = new THREE.PointLight(0xff5d8f, 0.8, 30);
+rimLight.position.set(-6, -4, 6);
+scene.add(rimLight);
+const rimLight2 = new THREE.PointLight(0x4f8cff, 0.7, 30);
+rimLight2.position.set(6, -3, 4);
+scene.add(rimLight2);
+
+// 背景星點
+(function addStars(){
+  const g = new THREE.BufferGeometry(), n = 600, pos = new Float32Array(n*3);
+  for (let i=0;i<n;i++){ pos[i*3]=(Math.random()-.5)*60; pos[i*3+1]=(Math.random()-.5)*40; pos[i*3+2]=-10-Math.random()*20; }
+  g.setAttribute("position", new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({color:0xaab2ff,size:0.08,transparent:true,opacity:.7})));
+})();
+
+/* =========================================================
+ * 3. 動態 3D 輪盤生成邏輯（Canvas 動態繪製文字貼圖）
+ * ========================================================= */
+const R_OUT = 3.4, R_IN = 0.75, DEPTH = 0.32;
+const PALETTE = [0xff6b6b,0xffb547,0xffe066,0x3ddc97,0x4fd1ff,0x4f8cff,0x9b7bff,0xff5d8f];
+
+const tiltGroup = new THREE.Group();   // 整體傾斜（可拖曳）
+const spinGroup = new THREE.Group();   // 會轉動的輪盤本體
+tiltGroup.add(spinGroup);
+scene.add(tiltGroup);
+tiltGroup.rotation.x = -0.32;
+
+// 固定元件：外框、中心軸、指針
+const rimMat = new THREE.MeshStandardMaterial({color:new THREE.Color(0xf2d38a).convertSRGBToLinear(), metalness:.85, roughness:.25});
+const rim = new THREE.Mesh(new THREE.TorusGeometry(R_OUT + 0.12, 0.14, 20, 120), rimMat);
+rim.position.z = DEPTH/2;
+tiltGroup.add(rim);
+
+const base = new THREE.Mesh(new THREE.CylinderGeometry(R_OUT+0.3, R_OUT+0.45, 0.25, 96),
+  new THREE.MeshStandardMaterial({color:0x221a4a, metalness:.4, roughness:.6}));
+base.rotation.x = Math.PI/2; base.position.z = -0.2;
+tiltGroup.add(base);
+
+const hub = new THREE.Mesh(new THREE.CylinderGeometry(R_IN*0.95, R_IN, DEPTH+0.35, 48),
+  new THREE.MeshStandardMaterial({color:0x2b2160, metalness:.6, roughness:.3}));
+hub.rotation.x = Math.PI/2; hub.position.z = DEPTH/2 + 0.1;
+tiltGroup.add(hub);
+const hubLabel = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 256;
+  const x = c.getContext("2d");
+  const grd = x.createLinearGradient(0,0,256,256); grd.addColorStop(0,"#ffb547"); grd.addColorStop(1,"#ff5d8f");
+  x.fillStyle = grd; x.beginPath(); x.arc(128,128,124,0,Math.PI*2); x.fill();
+  x.fillStyle = "#1a1030"; x.font = "800 86px " + getComputedStyle(document.body).fontFamily;
+  x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("AI3",128,120);
+  x.font = "700 30px " + getComputedStyle(document.body).fontFamily; x.fillText("LUNCH",128,180);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+  const m = new THREE.Mesh(new THREE.CircleGeometry(R_IN*0.88, 48), new THREE.MeshBasicMaterial({map:t, transparent:true}));
+  m.position.z = DEPTH + 0.29; return m;
+})();
+tiltGroup.add(hubLabel);
+
+// 指針（位於 12 點鐘方向，尖端朝下）
+const pointer = new THREE.Group();
+const pShape = new THREE.Shape();
+pShape.moveTo(0,-0.55); pShape.lineTo(0.32,0.15); pShape.quadraticCurveTo(0,0.5,-0.32,0.15); pShape.lineTo(0,-0.55);
+const pMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(pShape,{depth:0.22,bevelEnabled:true,bevelThickness:.04,bevelSize:.04,bevelSegments:3}),
+  new THREE.MeshStandardMaterial({color:new THREE.Color(0xff3b6b).convertSRGBToLinear(), metalness:.4, roughness:.3, emissive:0x200008}));
+pointer.add(pMesh);
+const pDot = new THREE.Mesh(new THREE.SphereGeometry(0.1,16,16), rimMat);
+pDot.position.set(0,0.12,0.3); pointer.add(pDot);
+pointer.position.set(0, R_OUT + 0.38, DEPTH + 0.05);
+tiltGroup.add(pointer);
+
+let wheelItems = [];   // 目前在輪盤上的餐廳
+let segAngle = Math.PI * 2;
+const disposables = [];
+
+function makeLabelTexture(text, sub){
+  const c = document.createElement("canvas"); c.width = 640; c.height = 128;
+  const x = c.getContext("2d");
+  const ff = getComputedStyle(document.body).fontFamily;
+  x.fillStyle = "#1a1030";
+  const ax = 320;
+  x.textAlign = "center"; x.textBaseline = "middle";
+  let size = 58;
+  x.font = `800 ${size}px ${ff}`;
+  while (x.measureText(text).width > 600 && size > 22){ size -= 2; x.font = `800 ${size}px ${ff}`; }
+  x.shadowColor = "rgba(255,255,255,.55)"; x.shadowBlur = 6;
+  x.fillText(text, ax, sub ? 52 : 64);
+  if (sub){ x.font = `600 26px ${ff}`; x.globalAlpha = .8; x.fillText(sub, ax, 100); }
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+  return t;
+}
+
+function shortName(n){ return n.replace(/\s*\(.*?\)\s*/g,"").trim(); }
+
+function buildWheel(items){
+  // 清除舊輪盤
+  while (spinGroup.children.length) spinGroup.remove(spinGroup.children[0]);
+  disposables.splice(0).forEach(d => d.dispose());
+  wheelItems = items.slice();
+  const n = Math.max(items.length, 1);
+  segAngle = Math.PI * 2 / n;
+
+  if (!items.length){
+    const g = new THREE.RingGeometry(R_IN, R_OUT, 96);
+    const m = new THREE.MeshStandardMaterial({color:0x3a3366, roughness:.8, transparent:true, opacity:.7});
+    disposables.push(g, m);
+    const mesh = new THREE.Mesh(g, m); mesh.position.z = DEPTH; spinGroup.add(mesh);
+    return;
+  }
+
+  const gap = n > 1 ? 0.012 : 0;
+  items.forEach((r, i) => {
+    const a0 = i * segAngle + gap, a1 = (i + 1) * segAngle - gap;
+    const shape = new THREE.Shape();
+    if (n === 1){
+      shape.absarc(0,0,R_OUT,0,Math.PI*2,false);
+      const hole = new THREE.Path(); hole.absarc(0,0,R_IN,0,Math.PI*2,true); shape.holes.push(hole);
+    } else {
+      shape.moveTo(Math.cos(a0)*R_IN, Math.sin(a0)*R_IN);
+      shape.lineTo(Math.cos(a0)*R_OUT, Math.sin(a0)*R_OUT);
+      shape.absarc(0,0,R_OUT,a0,a1,false);
+      shape.lineTo(Math.cos(a1)*R_IN, Math.sin(a1)*R_IN);
+      shape.absarc(0,0,R_IN,a1,a0,true);
+    }
+    const geo = new THREE.ExtrudeGeometry(shape,{depth:DEPTH, bevelEnabled:true, bevelThickness:.03, bevelSize:.025, bevelSegments:2, curveSegments:Math.max(6, Math.ceil(64/n))});
+    let color = PALETTE[i % PALETTE.length];
+    if (n % PALETTE.length === 1 && i === n - 1) color = PALETTE[(i + 3) % PALETTE.length]; // 避免首尾同色
+    const lin = new THREE.Color(color).convertSRGBToLinear();
+    const mat = new THREE.MeshStandardMaterial({color:lin, metalness:.15, roughness:.5, emissive:lin, emissiveIntensity:0});
+    disposables.push(geo, mat);
+    const seg = new THREE.Mesh(geo, mat);
+    seg.castShadow = true; seg.receiveShadow = true;
+    seg.userData.index = i;
+    spinGroup.add(seg);
+
+    // 文字貼圖（沿半徑方向排列，文字靠外緣對齊）
+    const mid = (i + 0.5) * segAngle;
+    const tex = makeLabelTexture(shortName(r.name), `${r.distanceMeters}m・${r.priceRange}`);
+    const labelW = (R_OUT - R_IN) * 0.88;
+    const maxH = Math.min(0.62, 2 * ((R_IN + R_OUT) / 2) * Math.sin(segAngle / 2) * 0.82);
+    const labelH = Math.min(labelW / 5, maxH);
+    const pg = new THREE.PlaneGeometry(labelW, labelH);
+    const pm = new THREE.MeshBasicMaterial({map:tex, transparent:true, depthWrite:false});
+    disposables.push(tex, pg, pm);
+    const label = new THREE.Mesh(pg, pm);
+    const rr = R_IN + (R_OUT - R_IN) * 0.5 - 0.02;
+    label.position.set(Math.cos(mid) * rr, Math.sin(mid) * rr, DEPTH + 0.04);
+    label.rotation.z = mid;
+    label.userData.mid = mid;   // 供每幀判斷是否翻轉文字
+    spinGroup.add(label);
+
+    // 分隔金屬釘
+    if (n > 1){
+      const pegG = new THREE.CylinderGeometry(0.06, 0.06, 0.22, 12);
+      disposables.push(pegG);
+      const peg = new THREE.Mesh(pegG, rimMat);
+      peg.rotation.x = Math.PI/2;
+      peg.position.set(Math.cos(i*segAngle)*(R_OUT-0.1), Math.sin(i*segAngle)*(R_OUT-0.1), DEPTH + 0.1);
+      spinGroup.add(peg);
+    }
+  });
+}
+
+/* =========================================================
+ * 4. 篩選條件過濾邏輯
+ * ========================================================= */
+const chipsBox = document.getElementById("food-chips");
+FOOD_TYPES.forEach((t, i) => {
+  chipsBox.insertAdjacentHTML("beforeend",
+    `<input type="checkbox" id="f${i}" value="${t.key}" checked><label for="f${i}"><i class="fa-solid ${t.icon}"></i>${t.key}</label>`);
+});
+
+function getFilters(){
+  return {
+    maxDist: +document.querySelector('input[name="dist"]:checked').value,
+    needAC: document.getElementById("ac").checked,
+    types: [...chipsBox.querySelectorAll("input:checked")].map(x => x.value)
+  };
+}
+function filterRestaurants(f){
+  return RESTAURANTS.filter(r =>
+    r.distanceMeters <= f.maxDist &&
+    (!f.needAC || r.hasAC) &&
+    r.categories.some(c => f.types.includes(c))
+  ).sort((a,b) => a.distanceMeters - b.distanceMeters);
+}
+
+const spinBtn = document.getElementById("spin-btn");
+const countBox = document.getElementById("count-box");
+let lastPickId = null;
+
+function refresh(){
+  const list = filterRestaurants(getFilters());
+  document.getElementById("count").textContent = list.length;
+  countBox.classList.toggle("zero", list.length === 0);
+  spinBtn.disabled = list.length === 0;
+  document.getElementById("cand-list").innerHTML = list.map(r => `<span data-id="${r.id}">${shortName(r.name)}</span>`).join("");
+  buildWheel(list);
+}
+document.getElementById("filters").addEventListener("change", refresh);
+document.getElementById("all-on").onclick = () => { chipsBox.querySelectorAll("input").forEach(x => x.checked = true); refresh(); };
+document.getElementById("all-off").onclick = () => { chipsBox.querySelectorAll("input").forEach(x => x.checked = false); refresh(); };
+
+/* =========================================================
+ * 5. 轉動動畫與 Ease-Out 演算法
+ * ========================================================= */
+const SPIN_MS = 3000;
+let spinning = false, spinStart = 0, spinFrom = 0, spinTo = 0, targetIndex = -1;
+let lastTickIndex = -1, pointerKick = 0;
+const easeOutQuart = t => 1 - Math.pow(1 - t, 4);
+const TOP = Math.PI / 2;
+const norm = a => ((a % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+
+function indexAtPointer(rot){
+  return Math.floor(norm(TOP - rot) / segAngle) % Math.max(wheelItems.length, 1);
+}
+
+function startSpin(excludeLast){
+  if (spinning || !wheelItems.length) return;
+  hideModal();
+  let pool = wheelItems.map((_, i) => i);
+  if (excludeLast && wheelItems.length > 1) pool = pool.filter(i => wheelItems[i].id !== lastPickId);
+  targetIndex = pool[Math.floor(Math.random() * pool.length)];
+  // 目標角度：讓抽中扇區中心（含隨機偏移）對準 12 點鐘指針
+  const jitter = (Math.random() - 0.5) * segAngle * 0.6;
+  const want = TOP - ((targetIndex + 0.5) * segAngle + jitter);
+  const cur = spinGroup.rotation.z;
+  const delta = norm(want - cur) + Math.PI * 2 * (5 + Math.floor(Math.random() * 2));
+  spinFrom = cur; spinTo = cur + delta;
+  spinStart = performance.now();
+  spinning = true;
+  spinBtn.disabled = true;
+  document.getElementById("filters").disabled = true;
+  document.querySelectorAll("#cand-list span").forEach(s => s.classList.remove("hit"));
+  spinGroup.children.forEach(c => { if (c.userData.index !== undefined) c.material.emissiveIntensity = 0; });
+}
+
+function finishSpin(){
+  spinning = false;
+  const r = wheelItems[targetIndex];
+  lastPickId = r.id;
+  document.getElementById("filters").disabled = false;
+  spinBtn.disabled = false;
+  spinGroup.children.forEach(c => { if (c.userData.index === targetIndex) c.material.emissiveIntensity = 0.35; });
+  const chip = document.querySelector(`#cand-list span[data-id="${r.id}"]`); if (chip) chip.classList.add("hit");
+  burstConfetti();
+  setTimeout(() => showResult(r), 650);
+}
+
+/* ----- 3D 彩帶粒子 ----- */
+const confetti = [];
+const confettiGeo = new THREE.PlaneGeometry(0.14, 0.24);
+const confettiMats = PALETTE.map(c => new THREE.MeshBasicMaterial({color:c, side:THREE.DoubleSide, transparent:true}));
+function burstConfetti(){
+  const origin = new THREE.Vector3(0, R_OUT + 0.3, DEPTH + 0.4);
+  tiltGroup.localToWorld(origin);
+  for (let i = 0; i < 220; i++){
+    const m = new THREE.Mesh(confettiGeo, confettiMats[i % confettiMats.length].clone());
+    m.position.copy(origin);
+    const ang = Math.random() * Math.PI * 2, sp = 4 + Math.random() * 7;
+    m.userData = {
+      v: new THREE.Vector3(Math.cos(ang) * sp * 0.75, Math.abs(Math.sin(ang)) * sp + 2, (Math.random() * 0.8 + 0.2) * sp * 0.6),
+      w: new THREE.Vector3(Math.random()*10, Math.random()*10, Math.random()*10), life: 0, max: 2.4 + Math.random()
+    };
+    m.rotation.set(Math.random()*6, Math.random()*6, Math.random()*6);
+    scene.add(m); confetti.push(m);
+  }
+}
+function updateConfetti(dt){
+  for (let i = confetti.length - 1; i >= 0; i--){
+    const p = confetti[i], u = p.userData;
+    u.life += dt;
+    u.v.y -= 9.8 * dt * 0.9;
+    u.v.multiplyScalar(1 - 1.6 * dt);
+    p.position.addScaledVector(u.v, dt);
+    p.rotation.x += u.w.x * dt; p.rotation.y += u.w.y * dt; p.rotation.z += u.w.z * dt;
+    p.material.opacity = Math.max(0, 1 - Math.max(0, u.life - u.max + 0.8) / 0.8);
+    if (u.life > u.max){ scene.remove(p); p.material.dispose(); confetti.splice(i, 1); }
+  }
+}
+
+/* ----- 拖曳互動：可旋轉檢視輪盤角度 ----- */
+let dragging = false, dragX = 0, dragY = 0;
+const tiltTarget = {x:-0.32, y:0};
+renderer.domElement.addEventListener("pointerdown", e => { dragging = true; dragX = e.clientX; dragY = e.clientY; renderer.domElement.setPointerCapture(e.pointerId); });
+renderer.domElement.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  tiltTarget.y = THREE.MathUtils.clamp(tiltTarget.y + (e.clientX - dragX) * 0.005, -0.7, 0.7);
+  tiltTarget.x = THREE.MathUtils.clamp(tiltTarget.x + (e.clientY - dragY) * 0.005, -0.9, 0.3);
+  dragX = e.clientX; dragY = e.clientY;
+});
+const endDrag = () => { dragging = false; };
+renderer.domElement.addEventListener("pointerup", endDrag);
+renderer.domElement.addEventListener("pointercancel", endDrag);
+renderer.domElement.addEventListener("dblclick", () => { tiltTarget.x = -0.32; tiltTarget.y = 0; });
+
+/* ----- 主迴圈 ----- */
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  if (spinning){
+    const k = Math.min((performance.now() - spinStart) / SPIN_MS, 1);
+    spinGroup.rotation.z = spinFrom + (spinTo - spinFrom) * easeOutQuart(k);
+    if (k >= 1){ spinGroup.rotation.z = spinTo; finishSpin(); }
+  } else if (!modalOpen()){
+    spinGroup.rotation.z += dt * 0.12;          // 待機微弱旋轉
+  }
+
+  // 文字永遠保持正向：轉到左半邊時翻轉 180°
+  spinGroup.children.forEach(c => {
+    if (c.userData.mid === undefined) return;
+    const a = c.userData.mid + spinGroup.rotation.z;
+    c.rotation.z = Math.cos(a) < 0 ? c.userData.mid + Math.PI : c.userData.mid;
+  });
+
+  // 指針碰到釘子時的彈跳
+  if (wheelItems.length > 1){
+    const idx = indexAtPointer(spinGroup.rotation.z);
+    if (idx !== lastTickIndex){ if (spinning) pointerKick = 0.45; lastTickIndex = idx; }
+  }
+  pointerKick *= Math.pow(0.0008, dt);
+  pointer.rotation.z = pointerKick * Math.sin(t * 40);
+
+  // 傾斜跟隨 + 呼吸擺動
+  if (!dragging){ tiltTarget.x += (-0.32 - tiltTarget.x) * dt * 0.6; tiltTarget.y += (0 - tiltTarget.y) * dt * 0.6; }
+  tiltGroup.rotation.x += (tiltTarget.x + Math.sin(t * 0.7) * 0.03 - tiltGroup.rotation.x) * Math.min(1, dt * 6);
+  tiltGroup.rotation.y += (tiltTarget.y + Math.sin(t * 0.5) * 0.05 - tiltGroup.rotation.y) * Math.min(1, dt * 6);
+  tiltGroup.position.y = Math.sin(t * 1.1) * 0.06;
+
+  updateConfetti(dt);
+  renderer.render(scene, camera);
+}
+
+/* ----- 版面：讓輪盤置中於側欄以外的區域 ----- */
+function layout(){
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  const sb = document.getElementById("sidebar").getBoundingClientRect();
+  const headerH = w <= 760 ? 52 : 60;
+  // 可用區域中心 (cx, cy)；以 setViewOffset 將輪盤移到該中心
+  let availW = w, availH = h - headerH, cx = w / 2, cy = (headerH + h) / 2;
+  if (w > 760){ availW = w - sb.right; cx = (sb.right + w) / 2; }
+  else { availH = sb.top - headerH; cy = (headerH + sb.top) / 2; }
+  camera.setViewOffset(w, h, w / 2 - cx, h / 2 - cy, w, h);
+  const tanH = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+  const need = R_OUT + 1.0;
+  const d = Math.max(need * h / (Math.max(availH, 120) * tanH), need * h / (Math.max(availW, 120) * tanH));
+  camera.position.z = d;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener("resize", layout);
+
+/* =========================================================
+ * 6. UI 事件監聽與結果呈現
+ * ========================================================= */
+const modal = document.getElementById("result-modal");
+const modalOpen = () => !modal.classList.contains("hidden");
+function hideModal(){ modal.classList.add("hidden"); }
+
+function showResult(r){
+  const mins = Math.max(1, Math.round(r.distanceMeters / 80));
+  document.getElementById("r-name").textContent = r.name;
+  document.getElementById("r-dist").innerHTML =
+    `<span><i class="fa-solid fa-location-dot"></i> 約 ${r.distanceMeters >= 1000 ? (r.distanceMeters/1000).toFixed(1)+" 公里" : r.distanceMeters+" 公尺"}</span>` +
+    `<span><i class="fa-solid fa-person-walking"></i> 步行約 ${mins} 分鐘</span>`;
+  document.getElementById("r-addr").textContent = r.address || "";
+  document.getElementById("r-tags").innerHTML =
+    (r.hasAC ? `<span class="ac"><i class="fa-solid fa-snowflake"></i> 有冷氣</span>` : `<span class="noac"><i class="fa-solid fa-sun"></i> 無冷氣</span>`) +
+    r.categories.map(c => `<span>${c}</span>`).join("") +
+    `<span>${r.priceRange}</span>`;
+  document.getElementById("r-map").href = r.googleMapUrl;
+  modal.classList.remove("hidden");
+}
+
+spinBtn.addEventListener("click", () => startSpin(false));
+document.getElementById("r-again").addEventListener("click", () => startSpin(true));
+document.getElementById("r-refilter").addEventListener("click", () => {
+  hideModal();
+  const sb = document.getElementById("sidebar");
+  sb.scrollTo({top:0, behavior:"smooth"});
+  sb.animate([{boxShadow:"0 0 0 0 rgba(255,181,71,.0)"},{boxShadow:"0 0 0 4px rgba(255,181,71,.7)"},{boxShadow:"0 0 0 0 rgba(255,181,71,.0)"}],{duration:900});
+});
+modal.addEventListener("click", e => { if (e.target === modal) hideModal(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") hideModal();
+  if ((e.key === "Enter" || e.key === " ") && !spinning && !spinBtn.disabled && document.activeElement.tagName !== "BUTTON"){ e.preventDefault(); startSpin(modalOpen()); }
+});
+
+// 啟動
+refresh();
+layout();
+animate();
+</script>
+</body>
+</html>

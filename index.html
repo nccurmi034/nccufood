@@ -608,11 +608,21 @@
   })();
 
   /* ---------- 3D 街景：路人走進店家 (Three.js) ---------- */
-  (function street3D() {
+  function street3D(retried) {
     const sec = document.getElementById('street'), host = document.getElementById('street3d');
-    if (!sec || !host || typeof THREE === 'undefined') return;       // 失敗時保留 2D 版
+    if (!sec || !host) return;
+    if (typeof THREE === 'undefined') {                                // 主要 CDN 失敗 → 換備用 CDN 重試一次
+      if (!retried) {
+        const sc = document.createElement('script');
+        sc.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';
+        sc.onload = () => street3D(true);
+        sc.onerror = () => console.warn('[街景] Three.js 載入失敗，改用 2D 版本');
+        document.head.appendChild(sc);
+      } else console.warn('[街景] Three.js 載入失敗，改用 2D 版本');
+      return;
+    }
     let renderer;
-    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false }); } catch (e) { return; }
+    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false }); } catch (e) { console.warn('[街景] 此瀏覽器無法啟動 WebGL，改用 2D 版本', e); return; }
     sec.classList.add('is3d');
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x2b1b12);
@@ -753,7 +763,11 @@
       if (e.isIntersecting && !running) { running = true; clock.getDelta(); requestAnimationFrame(frame); } else if (!e.isIntersecting) running = false;
     }), { threshold: 0 });
     vis.observe(sec);
-  })();
+  }
+  try { street3D(); } catch (e) {
+    console.warn('[街景] 3D 初始化失敗，改用 2D 版本', e);
+    const s2 = document.getElementById('street'); if (s2) s2.classList.remove('is3d');
+  }
 
   /* ---------- Init ---------- */
   renderTabs(); renderMenu(); renderGifts(); renderStores(); renderCart();

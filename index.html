@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>金酥鍋貼 | 傳承手藝的極致美味</title>
 <meta name="description" content="金酥鍋貼：台灣在地豬肉、每日現包、黃金煎脆。線上點餐、冷凍禮盒、門市據點一站完成。">
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2b1b12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="金酥鍋貼">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -232,7 +241,7 @@
     </div>
     <div>
       <h3 class="text-cream-50 font-bold mb-4">快速連結</h3>
-      <ul class="space-y-2 text-sm"><li><a href="#story" class="hover:text-amberx-400">品牌故事</a></li><li><a href="#order" class="hover:text-amberx-400">線上點餐</a></li><li><a href="#gift" class="hover:text-amberx-400">冷凍禮盒</a></li><li><a href="#stores" class="hover:text-amberx-400">門市據點</a></li><li><a href="#faq" class="hover:text-amberx-400">常見問題</a></li></ul>
+      <ul class="space-y-2 text-sm"><li><a href="#story" class="hover:text-amberx-400">品牌故事</a></li><li><a href="#order" class="hover:text-amberx-400">線上點餐</a></li><li><a href="#gift" class="hover:text-amberx-400">冷凍禮盒</a></li><li><a href="#stores" class="hover:text-amberx-400">門市據點</a></li><li><a href="#faq" class="hover:text-amberx-400">常見問題</a></li><li><button id="installBtn" type="button" class="hidden hover:text-amberx-400 font-bold"><i class="fa-solid fa-download mr-1"></i>安裝 App</button></li></ul>
     </div>
     <div>
       <h3 class="text-cream-50 font-bold mb-4">訂閱電子報</h3>
@@ -769,6 +778,18 @@
     console.warn('[街景] 3D 初始化失敗，改用 2D 版本', e);
     const s2 = document.getElementById('street'); if (s2) s2.classList.remove('is3d');
   }
+
+  /* ---------- PWA：註冊 Service Worker 與安裝按鈕 ---------- */
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.warn('[PWA] Service Worker 註冊失敗', err)));
+  }
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#installBtn').classList.remove('hidden'); });
+  $('#installBtn').addEventListener('click', async () => {
+    if (!installEvt) return;
+    installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('#installBtn').classList.add('hidden');
+  });
+  window.addEventListener('appinstalled', () => { $('#installBtn').classList.add('hidden'); toast('已安裝到主畫面'); });
 
   /* ---------- Init ---------- */
   renderTabs(); renderMenu(); renderGifts(); renderStores(); renderCart();

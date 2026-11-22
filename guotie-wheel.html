@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>金酥鍋貼 | 傳承手藝的極致美味</title>
+<title>金酥鍋貼 | 轉盤點餐 · 今天吃什麼</title>
 <meta name="description" content="金酥鍋貼：台灣在地豬肉、每日現包、黃金煎脆。線上點餐、冷凍禮盒、門市據點一站完成。">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -43,6 +43,7 @@
     </a>
     <nav class="hidden lg:flex items-center gap-6 text-sm" aria-label="主選單">
       <a href="#story" class="hover:text-amberx-400">品牌故事</a>
+      <a href="#wheel" class="hover:text-amberx-400">轉盤點餐</a>
       <a href="#menu" class="hover:text-amberx-400">熱門餐點</a>
       <a href="#order" class="hover:text-amberx-400">線上點餐</a>
       <a href="#gift" class="hover:text-amberx-400">冷凍禮盒</a>
@@ -60,7 +61,7 @@
   </div>
   <!-- Mobile menu -->
   <div id="mobileNav" class="hidden lg:hidden bg-wood-900 border-t border-white/10 px-6 py-4 space-y-3 text-sm">
-    <a href="#story" class="block">品牌故事</a><a href="#menu" class="block">熱門餐點</a><a href="#order" class="block">線上點餐</a>
+    <a href="#story" class="block">品牌故事</a><a href="#wheel" class="block">轉盤點餐</a><a href="#menu" class="block">熱門餐點</a><a href="#order" class="block">線上點餐</a>
     <a href="#gift" class="block">冷凍禮盒</a><a href="#stores" class="block">門市據點</a><a href="#contact" class="block">聯絡我們</a>
   </div>
 </header>
@@ -76,7 +77,8 @@
     <h1 class="font-serif font-black text-4xl sm:text-5xl lg:text-7xl leading-tight max-w-3xl">金黃酥脆，<br>傳承手藝的極致美味</h1>
     <p class="mt-6 max-w-xl text-cream-200 leading-relaxed">嚴選台灣在地豬肉，每日現包、現點現煎，一口咬下，酥脆外皮與爆汁內餡在口中交織。</p>
     <div class="mt-10 flex flex-wrap gap-4">
-      <a href="#order" class="px-8 py-3.5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold transition"><i class="fa-solid fa-utensils mr-2"></i>線上點餐</a>
+      <a href="#wheel" class="px-8 py-3.5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold transition"><i class="fa-solid fa-dice mr-2"></i>轉盤決定吃什麼</a>
+      <a href="#order" class="px-8 py-3.5 rounded-full bg-white/15 hover:bg-white/25 font-bold transition"><i class="fa-solid fa-utensils mr-2"></i>線上點餐</a>
       <a href="#stores" class="px-8 py-3.5 rounded-full border border-cream-50/70 hover:bg-white/10 font-bold transition"><i class="fa-solid fa-location-dot mr-2"></i>探索門市</a>
     </div>
   </div>
@@ -108,6 +110,40 @@
     <div class="fade-in bg-wood-800 text-cream-50 rounded-2xl py-8"><div class="font-serif font-black text-4xl text-amberx-400"><span data-count="10000">0</span>+</div><div class="mt-2 text-sm">每日賣出顆數</div></div>
     <div class="fade-in bg-wood-800 text-cream-50 rounded-2xl py-8"><div class="font-serif font-black text-4xl text-amberx-400"><span data-count="100">0</span>%</div><div class="mt-2 text-sm">現點現煎</div></div>
     <div class="fade-in bg-wood-800 text-cream-50 rounded-2xl py-8"><div class="font-serif font-black text-4xl text-amberx-400"><span data-count="30">0</span> 年</div><div class="mt-2 text-sm">老店技術</div></div>
+  </div>
+</section>
+
+<!-- ========== Wheel Ordering (轉盤點餐) ========== -->
+<section id="wheel" class="py-20 sm:py-28 bg-wood-900 text-cream-50 overflow-hidden">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-in">
+      <p class="text-amberx-400 tracking-[.3em] text-sm mb-3">SPIN &amp; EAT</p>
+      <h2 class="font-serif font-black text-3xl sm:text-4xl">選擇困難？轉一下決定今天吃什麼</h2>
+      <p class="mt-3 text-cream-200 text-sm">勾選想吃的種類與辣度，按下轉盤，抽到的餐點可直接加入購物車。</p>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-10 items-center">
+      <!-- 轉盤 -->
+      <div class="relative mx-auto w-full max-w-[460px] aspect-square">
+        <div class="absolute left-1/2 -top-1 -translate-x-1/2 z-10 text-amberx-400 text-4xl drop-shadow" aria-hidden="true"><i class="fa-solid fa-caret-down"></i></div>
+        <div class="absolute inset-0 rounded-full p-2 bg-gradient-to-br from-amberx-400 to-wood-600 shadow-2xl">
+          <canvas id="wheelCanvas" width="900" height="900" class="w-full h-full rounded-full" style="transition:transform 4.5s cubic-bezier(.12,.7,.1,1)" aria-label="餐點轉盤"></canvas>
+        </div>
+        <button id="spinBtn" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-cream-50 text-wood-900 font-serif font-black shadow-xl border-4 border-amberx-500 hover:scale-105 transition disabled:opacity-50 disabled:hover:scale-100">轉！</button>
+      </div>
+      <!-- 篩選與結果 -->
+      <div>
+        <div class="mb-5">
+          <div class="text-sm font-bold mb-2"><i class="fa-solid fa-utensils text-amberx-400 mr-1"></i>種類（複選）</div>
+          <div id="wheelCats" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="mb-5">
+          <div class="text-sm font-bold mb-2"><i class="fa-solid fa-pepper-hot text-amberx-400 mr-1"></i>辣度</div>
+          <div id="wheelSpicy" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="text-sm text-cream-200 mb-4"><span id="wheelCount" class="font-serif font-black text-2xl text-amberx-400">0</span> 道餐點在轉盤上</div>
+        <div id="wheelResult" class="rounded-2xl bg-white/5 border border-white/10 p-5 min-h-[170px] flex items-center justify-center text-cream-200 text-sm text-center">按下中間的「轉！」開始抽餐 🥟</div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -277,6 +313,11 @@
     <button id="infoClose" class="mt-6 px-6 py-2.5 rounded-full bg-wood-800 text-white text-sm font-bold">我知道了</button>
   </div>
 </div>
+
+<!-- 預約按鈕（固定於右下角） -->
+<a href="https://calendar.app.google/h1y5Gq49ZpJyVqocA" target="_blank" rel="noopener"
+   class="fixed right-4 bottom-4 z-40 inline-flex items-center justify-center min-h-[48px] px-5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold shadow-xl transition"
+   style="right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px))"><i class="fa-regular fa-calendar-check mr-2"></i>預約</a>
 
 <!-- Toast container -->
 <div id="toasts" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] space-y-2 pointer-events-none"></div>
@@ -539,6 +580,68 @@
     io.unobserve(en.target);
   }), { threshold: .15 });
   $$('.fade-in').forEach(el => io.observe(el));
+
+  /* ---------- Wheel ordering (轉盤點餐) ---------- */
+  const wheel = { cats: new Set(categories.map((_, i) => i)), spicy: 'all', items: [], rot: 0, spinning: false };
+  const spicyOpts = [['all', '不限'], ['0', '不辣'], ['1', '會辣']];
+  const WCOL = ['#e8812c', '#5a3d2b', '#f2a255', '#7a553c', '#d06a16', '#3e2a1d'];
+  function chip(label, on) { return `class="px-4 py-2 rounded-full text-sm border transition ${on ? 'bg-amberx-500 text-wood-900 border-amberx-500 font-bold' : 'border-white/25 hover:border-amberx-400'}"`; }
+  function renderWheelFilters() {
+    $('#wheelCats').innerHTML = categories.map((c, i) => `<button data-wc="${i}" ${chip(c, wheel.cats.has(i))}>${c}</button>`).join('') +
+      `<button data-wc="all" class="px-3 py-2 text-xs underline text-cream-200">全選</button>`;
+    $('#wheelSpicy').innerHTML = spicyOpts.map(o => `<button data-ws="${o[0]}" ${chip(o[1], wheel.spicy === o[0])}>${o[1]}</button>`).join('');
+  }
+  function drawWheel() {
+    wheel.items = products.filter(p => wheel.cats.has(p.cat) && (wheel.spicy === 'all' || (wheel.spicy === '0' ? p.spicy === 0 : p.spicy > 0)));
+    $('#wheelCount').textContent = wheel.items.length;
+    $('#spinBtn').disabled = wheel.items.length < 1 || wheel.spinning;
+    const cv = $('#wheelCanvas'), ctx = cv.getContext('2d'), W = cv.width, c = W / 2, n = wheel.items.length;
+    cv.style.transition = 'none'; cv.style.transform = 'rotate(0deg)'; wheel.rot = 0;
+    ctx.clearRect(0, 0, W, W);
+    if (!n) { ctx.fillStyle = '#3e2a1d'; ctx.beginPath(); ctx.arc(c, c, c, 0, 7); ctx.fill(); ctx.fillStyle = '#f8f1e4'; ctx.font = '40px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('沒有符合的餐點', c, c); return; }
+    const a = Math.PI * 2 / n;
+    wheel.items.forEach((it, i) => {
+      const s = -Math.PI / 2 - a / 2 + i * a;           // 第 0 格置中於正上方指針
+      ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, c - 4, s, s + a); ctx.closePath();
+      ctx.fillStyle = WCOL[i % WCOL.length]; ctx.fill(); ctx.strokeStyle = '#fdfaf4'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.save(); ctx.translate(c, c); ctx.rotate(s + a / 2); ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+      ctx.font = `bold ${n > 8 ? 32 : 40}px "Noto Sans TC", sans-serif`;
+      const label = it.name.replace(/（.*?）/, ''); ctx.fillText(label.length > 9 ? label.slice(0, 9) + '…' : label, c - 50, 14); ctx.restore();
+    });
+  }
+  function showWheelResult(it) {
+    $('#wheelResult').className = 'rounded-2xl bg-white/10 border border-amberx-500/60 p-4 flex gap-4 items-center text-left';
+    $('#wheelResult').innerHTML = `${imgTag(it.img, it.name, 'w-24 h-24 rounded-xl object-cover shrink-0')}
+      <div class="flex-1 min-w-0"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amberx-500 text-wood-900">今天就吃這個</span>
+      <h3 class="font-bold text-lg mt-1.5 leading-snug">${it.name}</h3><div class="text-amberx-400 font-serif font-bold">${money(it.price)}</div>
+      <div class="flex gap-2 mt-2 flex-wrap"><button data-add="${it.id}" class="px-4 py-2 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 text-sm font-bold"><i class="fa-solid fa-plus mr-1"></i>加入購物車</button>
+      <button id="respin" class="px-4 py-2 rounded-full border border-white/30 text-sm hover:bg-white/10"><i class="fa-solid fa-rotate-right mr-1"></i>再轉一次</button></div></div>`;
+  }
+  function spin() {
+    const n = wheel.items.length; if (!n || wheel.spinning) return;
+    wheel.spinning = true; $('#spinBtn').disabled = true;
+    const idx = Math.floor(Math.random() * n), a = 360 / n;
+    const jitter = (Math.random() - .5) * a * .7;
+    const cur = wheel.rot % 360;
+    wheel.rot += 360 * 6 + ((360 - idx * a + jitter) - cur + 360) % 360;
+    const cv = $('#wheelCanvas'); cv.style.transition = 'transform 4.5s cubic-bezier(.12,.7,.1,1)'; cv.style.transform = `rotate(${wheel.rot}deg)`;
+    $('#wheelResult').className = 'rounded-2xl bg-white/5 border border-white/10 p-5 min-h-[170px] flex items-center justify-center text-cream-200 text-sm';
+    $('#wheelResult').textContent = '轉轉轉…';
+    setTimeout(() => { wheel.spinning = false; $('#spinBtn').disabled = false; showWheelResult(wheel.items[idx]); }, 4600);
+  }
+  $('#wheelCats').addEventListener('click', e => {
+    const b = e.target.closest('[data-wc]'); if (!b || wheel.spinning) return;
+    if (b.dataset.wc === 'all') categories.forEach((_, i) => wheel.cats.add(i));
+    else { const i = +b.dataset.wc; wheel.cats.has(i) ? wheel.cats.delete(i) : wheel.cats.add(i); }
+    renderWheelFilters(); drawWheel();
+  });
+  $('#wheelSpicy').addEventListener('click', e => {
+    const b = e.target.closest('[data-ws]'); if (!b || wheel.spinning) return;
+    wheel.spicy = b.dataset.ws; renderWheelFilters(); drawWheel();
+  });
+  $('#spinBtn').onclick = spin;
+  $('#wheelResult').addEventListener('click', e => { if (e.target.closest('#respin')) spin(); });
+  renderWheelFilters(); drawWheel();
 
   /* ---------- Init ---------- */
   renderTabs(); renderMenu(); renderGifts(); renderStores(); renderCart();

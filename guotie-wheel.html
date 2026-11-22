@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>金酥鍋貼 | 轉盤點餐 · 今天吃什麼</title>
+<meta name="description" content="金酥鍋貼：台灣在地豬肉、每日現包、黃金煎脆。線上點餐、冷凍禮盒、門市據點一站完成。">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: { wood: { 900:'#2b1b12', 800:'#3e2a1d', 700:'#5a3d2b', 600:'#7a553c' },
+                amberx: { 500:'#e8812c', 600:'#d06a16', 400:'#f2a255' },
+                cream: { 50:'#fdfaf4', 100:'#f8f1e4', 200:'#efe4cf' } },
+      fontFamily: { sans:['"Noto Sans TC"','system-ui','sans-serif'], serif:['"Noto Serif TC"','serif'] }
+    } }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body { background:#fdfaf4; color:#2b1b12; }
+  .fade-in { opacity:0; transform:translateY(24px); transition:all .8s ease; }
+  .fade-in.show { opacity:1; transform:none; }
+  .faq-body { max-height:0; overflow:hidden; transition:max-height .35s ease; }
+  .img-fallback { background:linear-gradient(135deg,#e8812c,#5a3d2b); }
+  .tab-btn.active { background:#3e2a1d; color:#fff; border-color:#3e2a1d; }
+  #drawer { transition:transform .35s ease; }
+  .toast-in { animation:toast .3s ease; }
+  @keyframes toast { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body class="font-sans antialiased">
+
+<!-- ========== Header / Navigation ========== -->
+<header id="top" class="fixed top-0 inset-x-0 z-40 transition-all duration-300 bg-wood-900/80 backdrop-blur text-cream-50" id="navbar">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+    <a href="#top" class="flex items-center gap-2 shrink-0">
+      <span class="w-9 h-9 rounded-full bg-amberx-500 grid place-items-center text-wood-900 font-serif font-black">酥</span>
+      <span class="font-serif font-bold text-lg tracking-widest">金酥鍋貼</span>
+    </a>
+    <nav class="hidden lg:flex items-center gap-6 text-sm" aria-label="主選單">
+      <a href="#story" class="hover:text-amberx-400">品牌故事</a>
+      <a href="#wheel" class="hover:text-amberx-400">轉盤點餐</a>
+      <a href="#menu" class="hover:text-amberx-400">熱門餐點</a>
+      <a href="#order" class="hover:text-amberx-400">線上點餐</a>
+      <a href="#gift" class="hover:text-amberx-400">冷凍禮盒</a>
+      <a href="#stores" class="hover:text-amberx-400">門市據點</a>
+      <a href="#contact" class="hover:text-amberx-400">聯絡我們</a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <button id="cartBtn" class="relative w-10 h-10 grid place-items-center rounded-full hover:bg-white/10" aria-label="開啟購物車">
+        <i class="fa-solid fa-bag-shopping text-lg"></i>
+        <span id="cartBadge" class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-amberx-500 text-wood-900 text-[11px] font-bold grid place-items-center">0</span>
+      </button>
+      <a href="#order" class="hidden sm:inline-flex px-5 py-2 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold text-sm transition">立即點餐</a>
+      <button id="menuBtn" class="lg:hidden w-10 h-10 grid place-items-center" aria-label="開啟選單"><i class="fa-solid fa-bars text-xl"></i></button>
+    </div>
+  </div>
+  <!-- Mobile menu -->
+  <div id="mobileNav" class="hidden lg:hidden bg-wood-900 border-t border-white/10 px-6 py-4 space-y-3 text-sm">
+    <a href="#story" class="block">品牌故事</a><a href="#wheel" class="block">轉盤點餐</a><a href="#menu" class="block">熱門餐點</a><a href="#order" class="block">線上點餐</a>
+    <a href="#gift" class="block">冷凍禮盒</a><a href="#stores" class="block">門市據點</a><a href="#contact" class="block">聯絡我們</a>
+  </div>
+</header>
+
+<main>
+<!-- ========== Hero ========== -->
+<section class="relative min-h-screen flex items-center text-cream-50 overflow-hidden">
+  <img src="https://i.postimg.cc/j2YmMLV1/Chat-GPT-Image-2026nian8yue9ri-xia-wu06-20-57.png" alt="金酥鍋貼主視覺海報" class="absolute inset-0 w-full h-full object-cover"
+       onerror="this.src='https://images.unsplash.com/photo-1496116218417-1a781b1c416c?auto=format&fit=crop&w=1920&q=80'">
+  <div class="absolute inset-0 bg-gradient-to-r from-wood-900/90 via-wood-900/60 to-wood-900/20"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16">
+    <p class="tracking-[.4em] text-amberx-400 text-xs sm:text-sm mb-4">SINCE 1994 · 手工現包現煎</p>
+    <h1 class="font-serif font-black text-4xl sm:text-5xl lg:text-7xl leading-tight max-w-3xl">金黃酥脆，<br>傳承手藝的極致美味</h1>
+    <p class="mt-6 max-w-xl text-cream-200 leading-relaxed">嚴選台灣在地豬肉，每日現包、現點現煎，一口咬下，酥脆外皮與爆汁內餡在口中交織。</p>
+    <div class="mt-10 flex flex-wrap gap-4">
+      <a href="#wheel" class="px-8 py-3.5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold transition"><i class="fa-solid fa-dice mr-2"></i>轉盤決定吃什麼</a>
+      <a href="#order" class="px-8 py-3.5 rounded-full bg-white/15 hover:bg-white/25 font-bold transition"><i class="fa-solid fa-utensils mr-2"></i>線上點餐</a>
+      <a href="#stores" class="px-8 py-3.5 rounded-full border border-cream-50/70 hover:bg-white/10 font-bold transition"><i class="fa-solid fa-location-dot mr-2"></i>探索門市</a>
+    </div>
+  </div>
+  <a href="#story" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-cream-200 animate-bounce" aria-label="向下捲動"><i class="fa-solid fa-chevron-down"></i></a>
+</section>
+
+<!-- ========== Brand Story ========== -->
+<section id="story" class="py-20 sm:py-28 bg-cream-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
+    <div class="fade-in relative">
+      <img src="https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=1000&q=80" alt="手工包製鍋貼" class="rounded-3xl shadow-xl w-full aspect-[4/3] object-cover img-fallback" loading="lazy">
+      <div class="hidden sm:block absolute -bottom-6 -right-6 bg-amberx-500 text-wood-900 rounded-2xl px-6 py-4 shadow-lg">
+        <div class="font-serif font-black text-3xl">30 年</div><div class="text-sm">老店技術</div>
+      </div>
+    </div>
+    <div class="fade-in">
+      <p class="text-amberx-600 tracking-[.3em] text-sm mb-3">OUR STORY</p>
+      <h2 class="font-serif font-black text-3xl sm:text-4xl mb-6">一顆鍋貼，三十年的堅持</h2>
+      <p class="text-wood-700 leading-loose mb-8">從一個小小的攤位開始，我們相信好味道來自簡單而不妥協的原則。不加多餘添加物，只用最誠實的食材與最耐心的手工，把家的味道煎成金黃。</p>
+      <ul class="space-y-5">
+        <li class="flex gap-4"><span class="w-11 h-11 shrink-0 rounded-full bg-cream-200 grid place-items-center text-amberx-600"><i class="fa-solid fa-seedling"></i></span><div><h3 class="font-bold">台灣在地豬肉</h3><p class="text-sm text-wood-600">契約牧場直送，肥瘦比例黃金配置，肉質鮮甜多汁。</p></div></li>
+        <li class="flex gap-4"><span class="w-11 h-11 shrink-0 rounded-full bg-cream-200 grid place-items-center text-amberx-600"><i class="fa-solid fa-hand"></i></span><div><h3 class="font-bold">每日現包</h3><p class="text-sm text-wood-600">天天清晨手工擀皮包餡，不隔夜、不囤貨。</p></div></li>
+        <li class="flex gap-4"><span class="w-11 h-11 shrink-0 rounded-full bg-cream-200 grid place-items-center text-amberx-600"><i class="fa-solid fa-fire-flame-curved"></i></span><div><h3 class="font-bold">黃金煎脆比例</h3><p class="text-sm text-wood-600">獨家水粉比例，底部金黃酥脆、頂部軟嫩Q彈。</p></div></li>
+      </ul>
+    </div>
+  </div>
+  <!-- Stats -->
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 mt-20 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+    <div class="fade-in bg-wood-800 text-cream-50 rounded-2xl py-8"><div class="font-serif font-black text-4xl text-amberx-400"><span data-count="10000">0</span>+</div><div class="mt-2 text-sm">每日賣出顆數</div></div>
+    <div class="fade-in bg-wood-800 text-cream-50 rounded-2xl py-8"><div class="font-serif font-black text-4xl text-amberx-400"><span data-count="100">0</span>%</div><div class="mt-2 text-sm">現點現煎</div></div>
+    <div class="fade-in bg-wood-800 text-cream-50 rounded-2xl py-8"><div class="font-serif font-black text-4xl text-amberx-400"><span data-count="30">0</span> 年</div><div class="mt-2 text-sm">老店技術</div></div>
+  </div>
+</section>
+
+<!-- ========== Wheel Ordering (轉盤點餐) ========== -->
+<section id="wheel" class="py-20 sm:py-28 bg-wood-900 text-cream-50 overflow-hidden">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-in">
+      <p class="text-amberx-400 tracking-[.3em] text-sm mb-3">SPIN &amp; EAT</p>
+      <h2 class="font-serif font-black text-3xl sm:text-4xl">選擇困難？轉一下決定今天吃什麼</h2>
+      <p class="mt-3 text-cream-200 text-sm">勾選想吃的種類與辣度，按下轉盤，抽到的餐點可直接加入購物車。</p>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-10 items-center">
+      <!-- 轉盤 -->
+      <div class="relative mx-auto w-full max-w-[460px] aspect-square">
+        <div class="absolute left-1/2 -top-1 -translate-x-1/2 z-10 text-amberx-400 text-4xl drop-shadow" aria-hidden="true"><i class="fa-solid fa-caret-down"></i></div>
+        <div class="absolute inset-0 rounded-full p-2 bg-gradient-to-br from-amberx-400 to-wood-600 shadow-2xl">
+          <canvas id="wheelCanvas" width="900" height="900" class="w-full h-full rounded-full" style="transition:transform 4.5s cubic-bezier(.12,.7,.1,1)" aria-label="餐點轉盤"></canvas>
+        </div>
+        <button id="spinBtn" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-cream-50 text-wood-900 font-serif font-black shadow-xl border-4 border-amberx-500 hover:scale-105 transition disabled:opacity-50 disabled:hover:scale-100">轉！</button>
+      </div>
+      <!-- 篩選與結果 -->
+      <div>
+        <div class="mb-5">
+          <div class="text-sm font-bold mb-2"><i class="fa-solid fa-utensils text-amberx-400 mr-1"></i>種類（複選）</div>
+          <div id="wheelCats" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="mb-5">
+          <div class="text-sm font-bold mb-2"><i class="fa-solid fa-pepper-hot text-amberx-400 mr-1"></i>辣度</div>
+          <div id="wheelSpicy" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="text-sm text-cream-200 mb-4"><span id="wheelCount" class="font-serif font-black text-2xl text-amberx-400">0</span> 道餐點在轉盤上</div>
+        <div id="wheelResult" class="rounded-2xl bg-white/5 border border-white/10 p-5 min-h-[170px] flex items-center justify-center text-cream-200 text-sm text-center">按下中間的「轉！」開始抽餐 🥟</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Featured Menu / Online Ordering ========== -->
+<section id="menu" class="py-20 sm:py-28 bg-cream-100">
+  <div id="order" class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-in">
+      <p class="text-amberx-600 tracking-[.3em] text-sm mb-3">MENU</p>
+      <h2 class="font-serif font-black text-3xl sm:text-4xl">熱門餐點 · 線上點餐</h2>
+    </div>
+    <div id="tabs" class="flex flex-wrap justify-center gap-3 mb-10" role="tablist"></div>
+    <div id="menuGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+  </div>
+</section>
+
+<!-- ========== Gift Boxes ========== -->
+<section id="gift" class="py-20 sm:py-28 bg-wood-900 text-cream-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-12 fade-in">
+      <p class="text-amberx-400 tracking-[.3em] text-sm mb-3">FROZEN GIFT BOX</p>
+      <h2 class="font-serif font-black text-3xl sm:text-4xl">冷凍禮盒專區</h2>
+      <p class="mt-4 text-cream-200 max-w-2xl mx-auto">液態氮急速冷凍鎖住鮮味，在家 8 分鐘就能還原門市的酥脆與爆汁。</p>
+    </div>
+    <div id="giftGrid" class="grid md:grid-cols-2 gap-8"></div>
+    <div class="mt-12 grid sm:grid-cols-3 gap-6 text-center">
+      <div class="p-6 rounded-2xl bg-white/5"><i class="fa-solid fa-snowflake text-3xl text-amberx-400"></i><h3 class="font-bold mt-3">液態氮急速冷凍</h3><p class="text-sm text-cream-200 mt-1">-196°C 瞬間鎖鮮，肉汁不流失</p></div>
+      <div class="p-6 rounded-2xl bg-white/5"><i class="fa-solid fa-stopwatch text-3xl text-amberx-400"></i><h3 class="font-bold mt-3">8 分鐘還原</h3><p class="text-sm text-cream-200 mt-1">平底鍋加水悶煎，簡單上桌</p></div>
+      <div class="p-6 rounded-2xl bg-white/5"><i class="fa-solid fa-truck-fast text-3xl text-amberx-400"></i><h3 class="font-bold mt-3">全台冷凍宅配</h3><p class="text-sm text-cream-200 mt-1">隔日到貨，附保冷包材</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Locations & Hours ========== -->
+<section id="stores" class="py-20 sm:py-28 bg-cream-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-in">
+      <p class="text-amberx-600 tracking-[.3em] text-sm mb-3">LOCATIONS</p>
+      <h2 class="font-serif font-black text-3xl sm:text-4xl">門市據點與營業資訊</h2>
+    </div>
+    <div class="grid lg:grid-cols-5 gap-8">
+      <div class="lg:col-span-2 space-y-4" id="storeList"></div>
+      <div class="lg:col-span-3">
+        <div id="storeDetail" class="bg-white rounded-3xl shadow-lg p-6 sm:p-8 border border-cream-200"></div>
+        <!-- 擬真 Google Maps UI -->
+        <div class="mt-6 relative rounded-3xl overflow-hidden h-64 sm:h-72 border border-cream-200 shadow" style="background:#e9e4d8">
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 600 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="600" height="300" fill="#ebe6da"/>
+            <rect x="40" y="30" width="150" height="90" fill="#cfe3c0" rx="8"/>
+            <rect x="420" y="170" width="140" height="100" fill="#bcd8ea" rx="8"/>
+            <g stroke="#fff" stroke-width="14" fill="none"><path d="M0 150 H600"/><path d="M280 0 V300"/><path d="M0 250 L600 60"/></g>
+            <g stroke="#f7d98b" stroke-width="6" fill="none"><path d="M0 150 H600"/></g>
+            <g stroke="#fff" stroke-width="7" fill="none"><path d="M120 0 V300"/><path d="M460 0 V300"/><path d="M0 70 H600"/></g>
+          </svg>
+          <div id="mapPin" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full text-center">
+            <div class="bg-white rounded-lg shadow px-3 py-1 text-xs font-bold mb-1" id="mapLabel">旗艦店</div>
+            <i class="fa-solid fa-location-dot text-4xl text-red-500 drop-shadow"></i>
+          </div>
+          <div class="absolute top-3 left-3 bg-white rounded-lg shadow px-3 py-2 text-xs text-wood-700"><i class="fa-solid fa-magnifying-glass mr-1"></i><span id="mapAddr"></span></div>
+          <div class="absolute bottom-3 right-3 flex flex-col bg-white rounded-lg shadow text-center text-lg"><span class="px-3 py-1 border-b">+</span><span class="px-3 py-1">−</span></div>
+          <a id="mapLink" target="_blank" rel="noopener" class="absolute bottom-3 left-3 bg-wood-800 text-white text-xs rounded-full px-4 py-2 hover:bg-wood-700">在 Google 地圖開啟</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FAQ ========== -->
+<section id="faq" class="py-20 sm:py-28 bg-cream-100">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-in">
+      <p class="text-amberx-600 tracking-[.3em] text-sm mb-3">FAQ</p>
+      <h2 class="font-serif font-black text-3xl sm:text-4xl">常見問題</h2>
+    </div>
+    <div id="faqList" class="space-y-3"></div>
+  </div>
+</section>
+</main>
+
+<!-- ========== Footer ========== -->
+<footer id="contact" class="bg-wood-900 text-cream-200 pt-16 pb-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-3 gap-10">
+    <div>
+      <div class="flex items-center gap-2 text-cream-50 mb-4"><span class="w-9 h-9 rounded-full bg-amberx-500 grid place-items-center text-wood-900 font-serif font-black">酥</span><span class="font-serif font-bold text-lg tracking-widest">金酥鍋貼</span></div>
+      <p class="text-sm leading-relaxed">金黃酥脆，傳承手藝的極致美味。<br>客服專線：02-2345-6789<br>信箱：hello@jinsu-guotie.example</p>
+      <div class="flex gap-3 mt-5">
+        <a href="#" aria-label="Instagram" class="w-10 h-10 rounded-full bg-white/10 hover:bg-amberx-500 hover:text-wood-900 grid place-items-center transition"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" aria-label="Facebook" class="w-10 h-10 rounded-full bg-white/10 hover:bg-amberx-500 hover:text-wood-900 grid place-items-center transition"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" aria-label="Line" class="w-10 h-10 rounded-full bg-white/10 hover:bg-amberx-500 hover:text-wood-900 grid place-items-center transition"><i class="fa-brands fa-line"></i></a>
+      </div>
+    </div>
+    <div>
+      <h3 class="text-cream-50 font-bold mb-4">快速連結</h3>
+      <ul class="space-y-2 text-sm"><li><a href="#story" class="hover:text-amberx-400">品牌故事</a></li><li><a href="#order" class="hover:text-amberx-400">線上點餐</a></li><li><a href="#gift" class="hover:text-amberx-400">冷凍禮盒</a></li><li><a href="#stores" class="hover:text-amberx-400">門市據點</a></li><li><a href="#faq" class="hover:text-amberx-400">常見問題</a></li></ul>
+    </div>
+    <div>
+      <h3 class="text-cream-50 font-bold mb-4">訂閱電子報</h3>
+      <p class="text-sm mb-3">最新優惠與新品資訊，第一時間通知您。</p>
+      <form id="newsForm" class="flex gap-2">
+        <input type="email" required placeholder="您的 Email" class="flex-1 min-w-0 rounded-full px-4 py-2.5 text-wood-900 text-sm focus:outline-none focus:ring-2 focus:ring-amberx-500">
+        <button class="px-5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold text-sm">訂閱</button>
+      </form>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-2 text-xs">
+    <p>© 2026 金酥鍋貼 Jinsu Guotie. All rights reserved.</p>
+    <p><a href="#" id="privacyLink" class="hover:text-amberx-400">隱私權政策</a></p>
+  </div>
+</footer>
+
+<!-- ========== Cart Drawer ========== -->
+<div id="overlay" class="fixed inset-0 bg-black/50 z-50 hidden"></div>
+<aside id="drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-cream-50 z-50 translate-x-full flex flex-col shadow-2xl" aria-label="購物車">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-cream-200">
+    <h2 class="font-serif font-bold text-xl">購物車</h2>
+    <button id="closeCart" class="w-9 h-9 rounded-full hover:bg-cream-200" aria-label="關閉"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div id="cartItems" class="flex-1 overflow-y-auto px-6 py-4 space-y-4"></div>
+  <div class="border-t border-cream-200 px-6 py-5 space-y-3">
+    <div class="flex justify-between text-sm"><span>小計</span><span id="subtotal">NT$0</span></div>
+    <div class="flex justify-between text-sm text-wood-600"><span>運費（滿 NT$800 免運）</span><span id="shipping">NT$0</span></div>
+    <div class="flex justify-between font-bold text-lg"><span>總金額</span><span id="total" class="text-amberx-600">NT$0</span></div>
+    <button id="checkoutBtn" class="w-full py-3.5 rounded-full bg-wood-800 hover:bg-wood-700 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed">前往結帳</button>
+  </div>
+</aside>
+
+<!-- ========== Checkout Modal ========== -->
+<div id="checkoutModal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4 bg-black/60">
+  <div class="bg-cream-50 rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 sm:p-8 relative">
+    <button id="closeCheckout" class="absolute top-4 right-4 w-9 h-9 rounded-full hover:bg-cream-200" aria-label="關閉"><i class="fa-solid fa-xmark"></i></button>
+    <!-- Form view -->
+    <form id="checkoutForm">
+      <h2 class="font-serif font-bold text-2xl mb-5">確認訂單</h2>
+      <fieldset class="mb-5">
+        <legend class="text-sm font-bold mb-2">取餐方式</legend>
+        <div class="grid grid-cols-3 gap-2" id="methodGroup">
+          <label class="cursor-pointer"><input type="radio" name="method" value="內用" class="peer sr-only" checked><span class="block text-center py-3 rounded-xl border border-cream-200 peer-checked:bg-wood-800 peer-checked:text-white text-sm"><i class="fa-solid fa-chair block mb-1"></i>內用</span></label>
+          <label class="cursor-pointer"><input type="radio" name="method" value="外帶" class="peer sr-only"><span class="block text-center py-3 rounded-xl border border-cream-200 peer-checked:bg-wood-800 peer-checked:text-white text-sm"><i class="fa-solid fa-bag-shopping block mb-1"></i>外帶</span></label>
+          <label class="cursor-pointer"><input type="radio" name="method" value="宅配" class="peer sr-only"><span class="block text-center py-3 rounded-xl border border-cream-200 peer-checked:bg-wood-800 peer-checked:text-white text-sm"><i class="fa-solid fa-truck block mb-1"></i>宅配</span></label>
+        </div>
+      </fieldset>
+      <div class="space-y-3">
+        <input name="name" required placeholder="姓名" class="w-full rounded-xl border border-cream-200 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amberx-500">
+        <input name="phone" required pattern="[0-9\-\+\s]{8,15}" title="請輸入有效電話" placeholder="聯絡電話" class="w-full rounded-xl border border-cream-200 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amberx-500">
+        <input name="email" type="email" required placeholder="Email" class="w-full rounded-xl border border-cream-200 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amberx-500">
+        <input id="addrField" name="address" placeholder="宅配地址" class="hidden w-full rounded-xl border border-cream-200 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amberx-500">
+        <textarea name="note" rows="2" placeholder="備註（例：不要辣、餐具需求）" class="w-full rounded-xl border border-cream-200 px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-amberx-500"></textarea>
+      </div>
+      <div class="flex justify-between font-bold text-lg mt-5"><span>應付金額</span><span id="checkoutTotal" class="text-amberx-600"></span></div>
+      <button class="w-full mt-4 py-3.5 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold">送出訂單</button>
+    </form>
+    <!-- Success view -->
+    <div id="successView" class="hidden text-center py-6">
+      <div class="w-20 h-20 mx-auto rounded-full bg-green-100 text-green-600 grid place-items-center text-4xl mb-5"><i class="fa-solid fa-check"></i></div>
+      <h2 class="font-serif font-bold text-2xl mb-2">訂單已建立</h2>
+      <p class="text-wood-600 text-sm mb-1">訂單編號：<span id="orderNo" class="font-bold"></span></p>
+      <p id="successMsg" class="text-wood-600 text-sm mb-6"></p>
+      <button id="successClose" class="px-8 py-3 rounded-full bg-wood-800 text-white font-bold">繼續逛逛</button>
+    </div>
+  </div>
+</div>
+
+<!-- Info modal (privacy) -->
+<div id="infoModal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4 bg-black/60">
+  <div class="bg-cream-50 rounded-3xl max-w-md w-full p-8">
+    <h2 class="font-serif font-bold text-xl mb-3">隱私權政策</h2>
+    <p class="text-sm text-wood-700 leading-relaxed">我們僅將您提供的姓名、電話與 Email 用於訂單處理與配送聯繫，不會提供給第三方作為行銷用途。您可隨時來信要求查詢、更正或刪除個人資料。</p>
+    <button id="infoClose" class="mt-6 px-6 py-2.5 rounded-full bg-wood-800 text-white text-sm font-bold">我知道了</button>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toasts" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] space-y-2 pointer-events-none"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const money = n => 'NT$' + n.toLocaleString();
+  const IMG = id => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=800&q=80`;
+
+  /* ---------- Data ---------- */
+  const categories = ['招牌鍋貼', '精選水餃', '湯品/飲料', '經典小菜'];
+  const products = [
+    { id: 1, cat: 0, name: '招牌豬肉鍋貼（10入）', desc: '在地豬肉與高麗菜，皮薄餡多汁，底部金黃酥脆。', price: 85, tags: ['人氣', '爆汁'], spicy: 0, img: 'photo-1496116218417-1a781b1c416c' },
+    { id: 2, cat: 0, name: '韭菜豬肉鍋貼（10入）', desc: '青翠韭菜香氣十足，傳統老味道。', price: 90, tags: ['經典'], spicy: 0, img: 'photo-1563245372-f21724e3856d' },
+    { id: 3, cat: 0, name: '麻辣牛肉鍋貼（10入）', desc: '花椒麻香搭配牛肉鮮嫩，微辣過癮。', price: 110, tags: ['新品'], spicy: 2, img: 'photo-1534422298391-e4f8c172dddb' },
+    { id: 4, cat: 0, name: '鮮蝦玉米鍋貼（10入）', desc: '彈牙鮮蝦與甜玉米，清爽不膩。', price: 120, tags: ['爆汁'], spicy: 0, img: 'photo-1569058242253-92a9c755a0ec' },
+    { id: 5, cat: 1, name: '手工豬肉水餃（12顆）', desc: '現包現煮，皮Q餡鮮。', price: 95, tags: ['人氣'], spicy: 0, img: 'photo-1563245372-f21724e3856d' },
+    { id: 6, cat: 1, name: '蝦仁水餃（12顆）', desc: '大顆蝦仁粒粒鮮甜。', price: 135, tags: ['精選'], spicy: 0, img: 'photo-1534422298391-e4f8c172dddb' },
+    { id: 7, cat: 1, name: '紅油抄手（8顆）', desc: '特調紅油醬汁，香辣開胃。', price: 100, tags: ['辣'], spicy: 3, img: 'photo-1496116218417-1a781b1c416c' },
+    { id: 8, cat: 2, name: '酸辣湯', desc: '濃郁酸辣，料多實在。', price: 55, tags: ['人氣'], spicy: 2, img: 'photo-1555126634-323283e090fa' },
+    { id: 9, cat: 2, name: '玉米濃湯', desc: '濃稠香甜，暖心暖胃。', price: 45, tags: ['熱銷'], spicy: 0, img: 'photo-1547592166-23ac45744acd' },
+    { id: 10, cat: 2, name: '冰釀梅子綠茶', desc: '梅子清香解膩，冰涼暢快。', price: 40, tags: ['清爽'], spicy: 0, img: 'photo-1556679343-c7306c1976bc' },
+    { id: 11, cat: 3, name: '涼拌小黃瓜', desc: '蒜香爽脆，最佳解膩小菜。', price: 40, tags: ['開胃'], spicy: 1, img: 'photo-1512621776951-a57141f2eefd' },
+    { id: 12, cat: 3, name: '滷味拼盤', desc: '豆干、海帶、滷蛋精選拼盤。', price: 70, tags: ['經典'], spicy: 0, img: 'photo-1544025162-d76694265947' }
+  ];
+  const gifts = [
+    { id: 101, name: '招牌招財鍋貼禮盒（50入）', desc: '精選招牌豬肉鍋貼，附專用醬料與煎製說明，家庭聚餐首選。', price: 520, tags: ['家庭組', '人氣'], img: 'photo-1496116218417-1a781b1c416c' },
+    { id: 102, name: '節慶伴手雙拼禮盒（60入）', desc: '豬肉＋鮮蝦兩種口味，質感包裝，送禮大方有面子。', price: 780, tags: ['節慶限定', '伴手禮'], img: 'photo-1569058242253-92a9c755a0ec' }
+  ];
+  const stores = [
+    { id: 0, name: '旗艦店', addr: '台北市中正區中山南路 100 號', phone: '02-2345-6789', hours: [['週一至週五', '10:30 – 21:30'], ['週六、週日', '10:00 – 22:00']], seats: '48 席', delivery: true },
+    { id: 1, name: '信義店', addr: '台北市信義區松仁路 58 號 1 樓', phone: '02-2720-1234', hours: [['週一至週日', '11:00 – 21:00']], seats: '32 席', delivery: true },
+    { id: 2, name: '南港店', addr: '台北市南港區三重路 19-2 號', phone: '02-2655-8888', hours: [['週一至週五', '11:00 – 20:30'], ['週六、週日', '10:30 – 21:00']], seats: '28 席', delivery: true }
+  ];
+  const faqs = [
+    ['如何線上點餐？', '於「線上點餐」區挑選餐點加入購物車，點擊右上角購物車前往結帳，選擇內用、外帶或宅配並填寫聯絡資訊即可完成訂單。'],
+    ['冷凍鍋貼如何保存與烹調？', '收到後請立即冷凍保存於 -18°C 以下，可保存 6 個月。烹調時不需解凍，平底鍋倒入少許油，排入鍋貼加水悶煎約 8 分鐘，待水收乾煎至金黃即可。'],
+    ['有合作的外送平台嗎？', '旗艦店、信義店與南港店皆已上架 Uber Eats 與 foodpanda，外送時間與運費依平台公告為準。'],
+    ['訂單成立後可以修改嗎？', '現點現煎的餐點開始製作後無法修改。如需變更，請於下單 5 分鐘內來電門市協助處理。'],
+    ['宅配運費與到貨時間？', '冷凍宅配單筆滿 NT$800 免運，未滿酌收 NT$120。下單後約 1–2 個工作天送達。']
+  ];
+
+  /* ---------- State ---------- */
+  let cart = [];
+  try { cart = JSON.parse(localStorage.getItem('jinsu-cart') || '[]'); } catch (e) { cart = []; }
+  let activeTab = 0, activeStore = 0;
+  const save = () => { try { localStorage.setItem('jinsu-cart', JSON.stringify(cart)); } catch (e) {} };
+
+  /* ---------- Helpers ---------- */
+  const imgTag = (id, alt, cls) => `<img src="${IMG(id)}" alt="${alt}" loading="lazy" class="${cls} img-fallback" onerror="this.removeAttribute('src')">`;
+  function toast(msg, icon = 'fa-circle-check') {
+    const t = document.createElement('div');
+    t.className = 'toast-in bg-wood-800 text-white px-5 py-3 rounded-full shadow-xl text-sm flex items-center gap-2';
+    t.innerHTML = `<i class="fa-solid ${icon} text-amberx-400"></i><span></span>`;
+    t.lastChild.textContent = msg;
+    $('#toasts').appendChild(t);
+    setTimeout(() => { t.style.opacity = 0; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 2000);
+  }
+  const findItem = id => products.find(p => p.id === id) || gifts.find(g => g.id === id);
+
+  /* ---------- Navigation ---------- */
+  $('#menuBtn').onclick = () => $('#mobileNav').classList.toggle('hidden');
+  $$('#mobileNav a').forEach(a => a.onclick = () => $('#mobileNav').classList.add('hidden'));
+
+  /* ---------- Menu tabs ---------- */
+  function renderTabs() {
+    $('#tabs').innerHTML = categories.map((c, i) =>
+      `<button role="tab" data-i="${i}" class="tab-btn px-6 py-2.5 rounded-full border border-wood-600/30 text-sm font-medium transition hover:border-wood-800 ${i === activeTab ? 'active' : ''}">${c}</button>`).join('');
+    $$('.tab-btn').forEach(b => b.onclick = () => { activeTab = +b.dataset.i; renderTabs(); renderMenu(); });
+  }
+  function renderMenu() {
+    const list = products.filter(p => p.cat === activeTab);
+    $('#menuGrid').innerHTML = list.map(p => `
+      <article class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition flex flex-col border border-cream-200">
+        <div class="relative">
+          ${imgTag(p.img, p.name, 'w-full aspect-[4/3] object-cover')}
+          <div class="absolute top-3 left-3 flex gap-1.5">${p.tags.map(t => `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amberx-500 text-wood-900">${t}</span>`).join('')}</div>
+        </div>
+        <div class="p-5 flex-1 flex flex-col">
+          <h3 class="font-bold">${p.name}</h3>
+          <p class="text-sm text-wood-600 mt-1 flex-1">${p.desc}</p>
+          <div class="mt-2 text-xs text-red-500" aria-label="辣度">${p.spicy ? '<i class="fa-solid fa-pepper-hot"></i>'.repeat(p.spicy) : '<span class="text-wood-600/60">不辣</span>'}</div>
+          <div class="flex items-center justify-between mt-4">
+            <span class="font-serif font-bold text-xl text-amberx-600">${money(p.price)}</span>
+            <button data-add="${p.id}" class="px-4 py-2 rounded-full bg-wood-800 hover:bg-amberx-500 hover:text-wood-900 text-white text-sm font-bold transition"><i class="fa-solid fa-plus mr-1"></i>加入購物車</button>
+          </div>
+        </div>
+      </article>`).join('');
+  }
+  function renderGifts() {
+    $('#giftGrid').innerHTML = gifts.map(g => `
+      <article class="rounded-3xl overflow-hidden bg-wood-800 flex flex-col sm:flex-row">
+        ${imgTag(g.img, g.name, 'sm:w-1/2 w-full aspect-[4/3] sm:aspect-auto object-cover')}
+        <div class="p-6 flex flex-col flex-1">
+          <div class="flex gap-2 mb-2">${g.tags.map(t => `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amberx-500 text-wood-900">${t}</span>`).join('')}</div>
+          <h3 class="font-serif font-bold text-xl">${g.name}</h3>
+          <p class="text-sm text-cream-200 mt-2 flex-1">${g.desc}</p>
+          <div class="font-serif font-bold text-2xl text-amberx-400 mt-4">${money(g.price)}</div>
+          <button data-add="${g.id}" class="mt-3 py-3 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 font-bold transition"><i class="fa-solid fa-cart-plus mr-1"></i>直接購買 / 加入購物車</button>
+        </div>
+      </article>`).join('');
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-add]');
+    if (!b) return;
+    addToCart(+b.dataset.add);
+  });
+
+  /* ---------- Cart ---------- */
+  function addToCart(id) {
+    const row = cart.find(c => c.id === id);
+    row ? row.qty++ : cart.push({ id, qty: 1 });
+    save(); renderCart();
+    toast(`已加入：${findItem(id).name}`);
+    const badge = $('#cartBadge'); badge.animate([{ transform: 'scale(1.6)' }, { transform: 'scale(1)' }], { duration: 300 });
+  }
+  const totals = () => {
+    const sub = cart.reduce((s, c) => s + findItem(c.id).price * c.qty, 0);
+    const ship = sub === 0 || sub >= 800 ? 0 : 120;
+    return { sub, ship, total: sub + ship };
+  };
+  function renderCart() {
+    const count = cart.reduce((s, c) => s + c.qty, 0);
+    $('#cartBadge').textContent = count;
+    const box = $('#cartItems');
+    if (!cart.length) {
+      box.innerHTML = `<div class="text-center text-wood-600 py-16"><i class="fa-solid fa-bag-shopping text-5xl text-cream-200 mb-4"></i><p>購物車是空的，快去挑選美味吧！</p></div>`;
+    } else {
+      box.innerHTML = cart.map(c => {
+        const it = findItem(c.id);
+        return `<div class="flex gap-3 bg-white rounded-2xl p-3 border border-cream-200">
+          ${imgTag(it.img, it.name, 'w-20 h-20 rounded-xl object-cover shrink-0')}
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between gap-2"><h3 class="font-bold text-sm leading-snug">${it.name}</h3>
+              <button data-del="${c.id}" class="text-wood-600 hover:text-red-500" aria-label="刪除"><i class="fa-solid fa-trash-can"></i></button></div>
+            <div class="flex items-center justify-between mt-3">
+              <div class="flex items-center border border-cream-200 rounded-full">
+                <button data-dec="${c.id}" class="w-8 h-8" aria-label="減少"><i class="fa-solid fa-minus text-xs"></i></button>
+                <span class="w-8 text-center text-sm font-bold">${c.qty}</span>
+                <button data-inc="${c.id}" class="w-8 h-8" aria-label="增加"><i class="fa-solid fa-plus text-xs"></i></button>
+              </div>
+              <span class="font-bold text-amberx-600">${money(it.price * c.qty)}</span>
+            </div></div></div>`;
+      }).join('');
+    }
+    const t = totals();
+    $('#subtotal').textContent = money(t.sub);
+    $('#shipping').textContent = money(t.ship);
+    $('#total').textContent = money(t.total);
+    $('#checkoutBtn').disabled = !cart.length;
+  }
+  $('#cartItems').addEventListener('click', e => {
+    const q = a => e.target.closest(`[${a}]`);
+    let el;
+    if ((el = q('data-inc'))) cart.find(c => c.id === +el.dataset.inc).qty++;
+    else if ((el = q('data-dec'))) { const r = cart.find(c => c.id === +el.dataset.dec); r.qty--; if (r.qty <= 0) cart = cart.filter(c => c !== r); }
+    else if ((el = q('data-del'))) { cart = cart.filter(c => c.id !== +el.dataset.del); toast('已移除商品', 'fa-trash-can'); }
+    else return;
+    save(); renderCart();
+  });
+  const openCart = () => { $('#overlay').classList.remove('hidden'); $('#drawer').classList.remove('translate-x-full'); document.body.style.overflow = 'hidden'; };
+  const closeCart = () => { $('#overlay').classList.add('hidden'); $('#drawer').classList.add('translate-x-full'); document.body.style.overflow = ''; };
+  $('#cartBtn').onclick = openCart; $('#closeCart').onclick = closeCart; $('#overlay').onclick = closeCart;
+
+  /* ---------- Checkout ---------- */
+  const modal = $('#checkoutModal');
+  const showModal = m => { m.classList.remove('hidden'); m.classList.add('flex'); };
+  const hideModal = m => { m.classList.add('hidden'); m.classList.remove('flex'); };
+  $('#checkoutBtn').onclick = () => {
+    if (!cart.length) return;
+    closeCart();
+    $('#checkoutForm').classList.remove('hidden'); $('#successView').classList.add('hidden');
+    $('#checkoutTotal').textContent = money(totals().total);
+    showModal(modal);
+  };
+  $$('input[name=method]').forEach(r => r.onchange = () => {
+    const home = $('input[name=method]:checked').value === '宅配';
+    $('#addrField').classList.toggle('hidden', !home);
+    $('#addrField').required = home;
+  });
+  $('#closeCheckout').onclick = () => hideModal(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) hideModal(modal); });
+  $('#checkoutForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    $('#orderNo').textContent = 'JS' + Date.now().toString().slice(-8);
+    $('#successMsg').textContent = `${f.get('name')} 您好，我們已收到您的「${f.get('method')}」訂單，確認信將寄至 ${f.get('email')}。`;
+    $('#checkoutForm').classList.add('hidden'); $('#successView').classList.remove('hidden');
+    cart = []; save(); renderCart(); e.target.reset();
+    $('#addrField').classList.add('hidden'); $('#addrField').required = false;
+  });
+  $('#successClose').onclick = () => hideModal(modal);
+
+  /* ---------- Stores ---------- */
+  function renderStores() {
+    $('#storeList').innerHTML = stores.map(s => `
+      <button data-store="${s.id}" class="w-full text-left p-5 rounded-2xl border transition flex items-center gap-4 ${s.id === activeStore ? 'bg-wood-800 text-white border-wood-800 shadow-lg' : 'bg-white border-cream-200 hover:border-amberx-500'}">
+        <span class="w-11 h-11 rounded-full grid place-items-center shrink-0 ${s.id === activeStore ? 'bg-amberx-500 text-wood-900' : 'bg-cream-200 text-amberx-600'}"><i class="fa-solid fa-store"></i></span>
+        <span><span class="block font-bold">${s.name}</span><span class="block text-xs opacity-80 mt-0.5">${s.addr}</span></span>
+      </button>`).join('');
+    const s = stores[activeStore];
+    $('#storeDetail').innerHTML = `
+      <h3 class="font-serif font-bold text-2xl mb-4">${s.name}</h3>
+      <ul class="space-y-3 text-sm">
+        <li class="flex gap-3"><i class="fa-solid fa-location-dot w-5 text-amberx-600 mt-0.5"></i><span>${s.addr}</span></li>
+        <li class="flex gap-3"><i class="fa-solid fa-phone w-5 text-amberx-600 mt-0.5"></i><a href="tel:${s.phone.replace(/-/g, '')}" class="hover:text-amberx-600">${s.phone}</a></li>
+        <li class="flex gap-3"><i class="fa-regular fa-clock w-5 text-amberx-600 mt-0.5"></i><span>${s.hours.map(h => `<span class="block">${h[0]}　${h[1]}</span>`).join('')}</span></li>
+        <li class="flex gap-3"><i class="fa-solid fa-chair w-5 text-amberx-600 mt-0.5"></i><span>內用座位 ${s.seats}</span></li>
+      </ul>
+      <div class="mt-5 pt-5 border-t border-cream-200 flex flex-wrap items-center gap-3">
+        <span class="text-xs text-wood-600">外送合作平台</span>
+        <span class="px-4 py-1.5 rounded-full text-xs font-bold bg-[#06C167] text-white"><i class="fa-solid fa-bag-shopping mr-1"></i>Uber Eats</span>
+        <span class="px-4 py-1.5 rounded-full text-xs font-bold bg-[#D70F64] text-white"><i class="fa-solid fa-motorcycle mr-1"></i>foodpanda</span>
+      </div>`;
+    $('#mapLabel').textContent = s.name;
+    $('#mapAddr').textContent = s.addr;
+    $('#mapLink').href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.addr);
+    // 讓地圖圖釘位置隨門市略為變動，模擬不同地點
+    const pos = [[50, 52], [38, 45], [62, 56]][activeStore];
+    $('#mapPin').style.left = pos[0] + '%'; $('#mapPin').style.top = pos[1] + '%';
+  }
+  $('#storeList').addEventListener('click', e => {
+    const b = e.target.closest('[data-store]'); if (!b) return;
+    activeStore = +b.dataset.store; renderStores();
+  });
+
+  /* ---------- FAQ accordion ---------- */
+  $('#faqList').innerHTML = faqs.map((f, i) => `
+    <div class="bg-white rounded-2xl border border-cream-200 overflow-hidden fade-in">
+      <button class="faq-q w-full flex justify-between items-center gap-4 text-left px-6 py-4 font-bold" aria-expanded="false" aria-controls="faq${i}">
+        <span>${f[0]}</span><i class="fa-solid fa-chevron-down text-amberx-600 transition-transform"></i>
+      </button>
+      <div id="faq${i}" class="faq-body"><p class="px-6 pb-5 text-sm text-wood-600 leading-relaxed">${f[1]}</p></div>
+    </div>`).join('');
+  $$('.faq-q').forEach(q => q.onclick = () => {
+    const body = q.nextElementSibling, open = q.getAttribute('aria-expanded') === 'true';
+    $$('.faq-q').forEach(o => { o.setAttribute('aria-expanded', 'false'); o.nextElementSibling.style.maxHeight = 0; o.lastElementChild.style.transform = ''; });
+    if (!open) { q.setAttribute('aria-expanded', 'true'); body.style.maxHeight = body.scrollHeight + 'px'; q.lastElementChild.style.transform = 'rotate(180deg)'; }
+  });
+
+  /* ---------- Footer ---------- */
+  $('#newsForm').addEventListener('submit', e => { e.preventDefault(); toast('訂閱成功，感謝您！', 'fa-envelope'); e.target.reset(); });
+  $('#privacyLink').onclick = e => { e.preventDefault(); showModal($('#infoModal')); };
+  $('#infoClose').onclick = () => hideModal($('#infoModal'));
+  $('#infoModal').addEventListener('click', e => { if (e.target.id === 'infoModal') hideModal($('#infoModal')); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeCart(); hideModal(modal); hideModal($('#infoModal')); } });
+
+  /* ---------- Scroll reveal & counters ---------- */
+  const io = new IntersectionObserver(entries => entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    en.target.classList.add('show');
+    $$('[data-count]', en.target).forEach(el => {
+      const end = +el.dataset.count, start = performance.now();
+      const step = now => { const p = Math.min((now - start) / 1500, 1); el.textContent = Math.floor(end * p).toLocaleString(); if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+    io.unobserve(en.target);
+  }), { threshold: .15 });
+  $$('.fade-in').forEach(el => io.observe(el));
+
+  /* ---------- Wheel ordering (轉盤點餐) ---------- */
+  const wheel = { cats: new Set(categories.map((_, i) => i)), spicy: 'all', items: [], rot: 0, spinning: false };
+  const spicyOpts = [['all', '不限'], ['0', '不辣'], ['1', '會辣']];
+  const WCOL = ['#e8812c', '#5a3d2b', '#f2a255', '#7a553c', '#d06a16', '#3e2a1d'];
+  function chip(label, on) { return `class="px-4 py-2 rounded-full text-sm border transition ${on ? 'bg-amberx-500 text-wood-900 border-amberx-500 font-bold' : 'border-white/25 hover:border-amberx-400'}"`; }
+  function renderWheelFilters() {
+    $('#wheelCats').innerHTML = categories.map((c, i) => `<button data-wc="${i}" ${chip(c, wheel.cats.has(i))}>${c}</button>`).join('') +
+      `<button data-wc="all" class="px-3 py-2 text-xs underline text-cream-200">全選</button>`;
+    $('#wheelSpicy').innerHTML = spicyOpts.map(o => `<button data-ws="${o[0]}" ${chip(o[1], wheel.spicy === o[0])}>${o[1]}</button>`).join('');
+  }
+  function drawWheel() {
+    wheel.items = products.filter(p => wheel.cats.has(p.cat) && (wheel.spicy === 'all' || (wheel.spicy === '0' ? p.spicy === 0 : p.spicy > 0)));
+    $('#wheelCount').textContent = wheel.items.length;
+    $('#spinBtn').disabled = wheel.items.length < 1 || wheel.spinning;
+    const cv = $('#wheelCanvas'), ctx = cv.getContext('2d'), W = cv.width, c = W / 2, n = wheel.items.length;
+    cv.style.transition = 'none'; cv.style.transform = 'rotate(0deg)'; wheel.rot = 0;
+    ctx.clearRect(0, 0, W, W);
+    if (!n) { ctx.fillStyle = '#3e2a1d'; ctx.beginPath(); ctx.arc(c, c, c, 0, 7); ctx.fill(); ctx.fillStyle = '#f8f1e4'; ctx.font = '40px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('沒有符合的餐點', c, c); return; }
+    const a = Math.PI * 2 / n;
+    wheel.items.forEach((it, i) => {
+      const s = -Math.PI / 2 - a / 2 + i * a;           // 第 0 格置中於正上方指針
+      ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, c - 4, s, s + a); ctx.closePath();
+      ctx.fillStyle = WCOL[i % WCOL.length]; ctx.fill(); ctx.strokeStyle = '#fdfaf4'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.save(); ctx.translate(c, c); ctx.rotate(s + a / 2); ctx.textAlign = 'right'; ctx.fillStyle = '#fff';
+      ctx.font = `bold ${n > 8 ? 32 : 40}px "Noto Sans TC", sans-serif`;
+      const label = it.name.replace(/（.*?）/, ''); ctx.fillText(label.length > 9 ? label.slice(0, 9) + '…' : label, c - 50, 14); ctx.restore();
+    });
+  }
+  function showWheelResult(it) {
+    $('#wheelResult').className = 'rounded-2xl bg-white/10 border border-amberx-500/60 p-4 flex gap-4 items-center text-left';
+    $('#wheelResult').innerHTML = `${imgTag(it.img, it.name, 'w-24 h-24 rounded-xl object-cover shrink-0')}
+      <div class="flex-1 min-w-0"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amberx-500 text-wood-900">今天就吃這個</span>
+      <h3 class="font-bold text-lg mt-1.5 leading-snug">${it.name}</h3><div class="text-amberx-400 font-serif font-bold">${money(it.price)}</div>
+      <div class="flex gap-2 mt-2 flex-wrap"><button data-add="${it.id}" class="px-4 py-2 rounded-full bg-amberx-500 hover:bg-amberx-600 text-wood-900 text-sm font-bold"><i class="fa-solid fa-plus mr-1"></i>加入購物車</button>
+      <button id="respin" class="px-4 py-2 rounded-full border border-white/30 text-sm hover:bg-white/10"><i class="fa-solid fa-rotate-right mr-1"></i>再轉一次</button></div></div>`;
+  }
+  function spin() {
+    const n = wheel.items.length; if (!n || wheel.spinning) return;
+    wheel.spinning = true; $('#spinBtn').disabled = true;
+    const idx = Math.floor(Math.random() * n), a = 360 / n;
+    const jitter = (Math.random() - .5) * a * .7;
+    const cur = wheel.rot % 360;
+    wheel.rot += 360 * 6 + ((360 - idx * a + jitter) - cur + 360) % 360;
+    const cv = $('#wheelCanvas'); cv.style.transition = 'transform 4.5s cubic-bezier(.12,.7,.1,1)'; cv.style.transform = `rotate(${wheel.rot}deg)`;
+    $('#wheelResult').className = 'rounded-2xl bg-white/5 border border-white/10 p-5 min-h-[170px] flex items-center justify-center text-cream-200 text-sm';
+    $('#wheelResult').textContent = '轉轉轉…';
+    setTimeout(() => { wheel.spinning = false; $('#spinBtn').disabled = false; showWheelResult(wheel.items[idx]); }, 4600);
+  }
+  $('#wheelCats').addEventListener('click', e => {
+    const b = e.target.closest('[data-wc]'); if (!b || wheel.spinning) return;
+    if (b.dataset.wc === 'all') categories.forEach((_, i) => wheel.cats.add(i));
+    else { const i = +b.dataset.wc; wheel.cats.has(i) ? wheel.cats.delete(i) : wheel.cats.add(i); }
+    renderWheelFilters(); drawWheel();
+  });
+  $('#wheelSpicy').addEventListener('click', e => {
+    const b = e.target.closest('[data-ws]'); if (!b || wheel.spinning) return;
+    wheel.spicy = b.dataset.ws; renderWheelFilters(); drawWheel();
+  });
+  $('#spinBtn').onclick = spin;
+  $('#wheelResult').addEventListener('click', e => { if (e.target.closest('#respin')) spin(); });
+  renderWheelFilters(); drawWheel();
+
+  /* ---------- Init ---------- */
+  renderTabs(); renderMenu(); renderGifts(); renderStores(); renderCart();
+})();
+</script>
+</body>
+</html>

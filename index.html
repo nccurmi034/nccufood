@@ -48,6 +48,13 @@
   .walker .leg.b{animation-direction:alternate-reverse}
   @keyframes swing{from{transform:rotate(-24deg)}to{transform:rotate(24deg)}}
   @media (prefers-reduced-motion:reduce){.walker,.walker svg,.walker .leg{animation:none!important}.walker{left:calc(var(--i)*9%)}}
+
+  /* ===== 3D 街景 ===== */
+  #street3d{position:absolute;inset:0}
+  #street3d canvas{display:block;width:100%;height:100%}
+  #street.is3d{height:520px}
+  #street.is3d .glow,#street.is3d .sign,#street.is3d .ground,#street.is3d #walkers{display:none}
+  @media (max-width:640px){#street.is3d{height:360px}}
 </style>
 </head>
 <body class="font-sans antialiased">
@@ -105,6 +112,7 @@
   <div class="sign">金酥鍋貼 · 營業中</div>
   <div class="ground"></div>
   <div id="walkers"></div>
+  <div id="street3d"></div>
 </section>
 
 <!-- ========== Brand Story ========== -->
@@ -310,6 +318,7 @@
 <!-- Toast container -->
 <div id="toasts" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] space-y-2 pointer-events-none"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (() => {
   'use strict';
@@ -596,6 +605,154 @@
       </svg>`;
       box.appendChild(w);
     }
+  })();
+
+  /* ---------- 3D 街景：路人走進店家 (Three.js) ---------- */
+  (function street3D() {
+    const sec = document.getElementById('street'), host = document.getElementById('street3d');
+    if (!sec || !host || typeof THREE === 'undefined') return;       // 失敗時保留 2D 版
+    let renderer;
+    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false }); } catch (e) { return; }
+    sec.classList.add('is3d');
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearColor(0x2b1b12);
+    host.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x2b1b12, 28, 60);
+    const camera = new THREE.PerspectiveCamera(38, 2, 0.1, 100);
+
+    /* 燈光 */
+    scene.add(new THREE.AmbientLight(0xffe2c2, 0.55));
+    const moon = new THREE.DirectionalLight(0xb9c7ff, 0.45); moon.position.set(-6, 12, 10); scene.add(moon);
+    const doorLight = new THREE.PointLight(0xffa850, 1.1, 11); doorLight.position.set(0, 2.6, 1.6); scene.add(doorLight);
+    const inLight = new THREE.PointLight(0xffb76b, .9, 14); inLight.position.set(0, 4.5, -3); scene.add(inLight);
+
+    const std = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .85, metalness: 0 }, o));
+    const box = (w, h, d, m, x, y, z) => { const me = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); me.position.set(x, y, z); scene.add(me); return me; };
+
+    /* 地面 */
+    box(90, .15, 5, std(0x74614f), 0, .075, 2.5);                       // 人行道
+    box(90, .22, .3, std(0x4a3b30), 0, .11, 5.1);                       // 路緣
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(90, 16), std(0x2a2522)); road.rotation.x = -Math.PI / 2; road.position.set(0, 0, 13.2); scene.add(road);
+    for (let x = -40; x < 40; x += 6) box(2.6, .02, .18, std(0xe8c98a, { emissive: 0x3a2c10 }), x, .02, 11);
+
+    /* 店面（門留出缺口，內部為暖光空間） */
+    const wall = std(0x5a3d2b), trim = std(0x3e2a1d), glass = std(0x9a6a3a, { emissive: 0xb86a1e, emissiveIntensity: .55 });
+    const DW = 1.5, DH = 4.2, SH = 7.6, SW = 16;
+    box(SW / 2 - DW, SH, .4, wall, -(DW + (SW / 2 - DW) / 2), SH / 2 + .15, 0);   // 左牆
+    box(SW / 2 - DW, SH, .4, wall, (DW + (SW / 2 - DW) / 2), SH / 2 + .15, 0);    // 右牆
+    box(DW * 2, SH - DH, .4, wall, 0, DH + (SH - DH) / 2 + .15, 0);               // 門楣
+    box(.2, DH, .5, trim, -DW, DH / 2 + .15, .05); box(.2, DH, .5, trim, DW, DH / 2 + .15, .05);  // 門框
+    [-4.8, 4.8].forEach(x => { box(3.6, 2.6, .12, glass, x, 3.2, .26); box(3.8, .18, .2, trim, x, 4.6, .3); box(3.8, .18, .2, trim, x, 1.8, .3); });
+    const awn = box(SW, .15, 2.2, std(0xe8812c), 0, 5.05, 1.0); awn.rotation.x = .32;
+    box(SW + .6, .4, 1, trim, 0, SH + .35, 0);                                     // 屋簷
+    const inner = new THREE.Mesh(new THREE.BoxGeometry(SW, SH, 6.5), std(0xb07a42, { emissive: 0x6a3a10, emissiveIntensity: .55, side: THREE.BackSide }));
+    inner.position.set(0, SH / 2 + .15, -3.2); scene.add(inner);
+    box(5, 1.1, 1.2, std(0x5a3d2b), 3.5, 0.7, -4.6);                               // 櫃檯
+    [-3, 0, 3].forEach(x => { const l = new THREE.Mesh(new THREE.SphereGeometry(.28, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffe0a8 })); l.position.set(x, 6, -2); scene.add(l); });
+    box(7, 9.5, 6, std(0x2a1d16), -12.5, 4.9, -3); box(7, 6.5, 6, std(0x33241b), 12.5, 3.4, -3);   // 隔壁建築
+    [-12.5, 12.5].forEach(x => [2.4, 5.2, 8].forEach(y => box(1.4, 1, .1, std(0x6b4a2a, { emissive: 0x2a1a0a }), x, y, .1)));
+
+    /* 招牌文字 */
+    function signTexture() {
+      const c = document.createElement('canvas'); c.width = 1024; c.height = 256; const g = c.getContext('2d');
+      g.fillStyle = '#e8812c'; g.fillRect(0, 0, 1024, 256);
+      g.strokeStyle = '#2b1b12'; g.lineWidth = 10; g.strokeRect(10, 10, 1004, 236);
+      g.fillStyle = '#2b1b12'; g.font = '900 120px "Noto Serif TC", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('金酥鍋貼 · 營業中', 512, 138); return new THREE.CanvasTexture(c);
+    }
+    const signMat = new THREE.MeshBasicMaterial({ map: signTexture() });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.6), signMat); sign.position.set(0, 6.4, .35); scene.add(sign);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { signMat.map = signTexture(); signMat.needsUpdate = true; });
+
+    /* 路人 */
+    const clothes = [0xe8812c, 0xf8f1e4, 0xd06a16, 0xefe4cf, 0xf2a255, 0xa8c5a0, 0xc9a27e, 0x7aa6c9, 0xc96a6a];
+    const hairs = [0x1a1010, 0x3a2418, 0x5a3d2b, 0x111111];
+    const G = {
+      torso: new THREE.CylinderGeometry(.32, .36, 1.0, 14), head: new THREE.SphereGeometry(.27, 16, 12),
+      hair: new THREE.SphereGeometry(.285, 14, 8, 0, Math.PI * 2, 0, Math.PI * .55),
+      leg: new THREE.CylinderGeometry(.115, .1, 1.1, 10), arm: new THREE.CylinderGeometry(.085, .075, .85, 8),
+      bag: new THREE.BoxGeometry(.28, .36, .16), shadow: new THREE.CircleGeometry(.5, 16)
+    };
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .35, depthWrite: false });
+    const skinMat = std(0xf0c9a0), legMat = std(0x2b1b12), legMat2 = std(0x3e2a1d);
+
+    function makePerson() {
+      const cloth = std(clothes[Math.floor(Math.random() * clothes.length)]);
+      const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+      const torso = new THREE.Mesh(G.torso, cloth); torso.position.y = 1.75; body.add(torso);
+      const head = new THREE.Mesh(G.head, skinMat); head.position.y = 2.55; body.add(head);
+      const hair = new THREE.Mesh(G.hair, std(hairs[Math.floor(Math.random() * hairs.length)])); hair.position.y = 2.57; hair.rotation.x = -.25; body.add(hair);
+      const mkLimb = (geo, mat, x, y, len) => { const p = new THREE.Group(); p.position.set(x, y, 0); const m = new THREE.Mesh(geo, mat); m.position.y = -len / 2; p.add(m); body.add(p); return p; };
+      const legL = mkLimb(G.leg, legMat, -.15, 1.25, 1.1), legR = mkLimb(G.leg, legMat2, .15, 1.25, 1.1);
+      const armL = mkLimb(G.arm, cloth, -.43, 2.17, .85), armR = mkLimb(G.arm, cloth, .43, 2.17, .85);
+      if (Math.random() < .45) { const b = new THREE.Mesh(G.bag, std(0xe8812c)); b.position.set(.05, -.95, .05); armR.add(b); }
+      const sh = new THREE.Mesh(G.shadow, shadowMat); sh.rotation.x = -Math.PI / 2; sh.position.y = .03; root.add(sh);
+      const sc = .92 + Math.random() * .3; root.scale.set(sc, sc, sc);
+      return { root, body, legL, legR, armL, armR };
+    }
+
+    const FLOOR = .15, DOOR_X = 0, LANE_MIN = 1.1, LANE_MAX = 3.7, EDGE = 19;
+    const people = [];
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    function spawn() {
+      const p = makePerson(), side = Math.random() < .5 ? -1 : 1, lane = rnd(LANE_MIN, LANE_MAX), r = Math.random();
+      let start, wp;
+      if (r < .42) { start = [side * EDGE, lane]; wp = [[-side * EDGE, lane]]; }                                  // 路過
+      else if (r < .78) { start = [side * EDGE, lane]; const dx = rnd(-.6, .6); wp = [[dx, lane], [dx, .5], [dx * .5, -2.2], [0, -3.4]]; }  // 走進店裡
+      else { start = [rnd(-.4, .4), -3.4]; const ex = -side * EDGE; wp = [[0, -.6], [rnd(-.6, .6), .6], [rnd(-1, 1), lane], [ex, lane]]; }          // 從店裡走出
+      p.root.position.set(start[0], FLOOR, start[1]);
+      p.wp = wp.map(w => new THREE.Vector2(w[0], w[1])); p.i = 0; p.speed = rnd(2.0, 3.2); p.ph = Math.random() * 6; p.yaw = Math.atan2(wp[0][0] - start[0], wp[0][1] - start[1]);
+      p.root.rotation.y = p.yaw; scene.add(p.root); people.push(p);
+    }
+    function removePerson(p) { scene.remove(p.root); people.splice(people.indexOf(p), 1); }
+
+    let spawnT = 0;
+    function step(dt) {
+      spawnT -= dt;
+      if (spawnT <= 0 && people.length < 13) { spawn(); spawnT = rnd(.5, 1.3); }
+      for (const p of people.slice()) {
+        const pos = p.root.position, t = p.wp[p.i], dx = t.x - pos.x, dz = t.y - pos.z, d = Math.hypot(dx, dz), st = p.speed * dt;
+        if (d <= st) { pos.x = t.x; pos.z = t.y; if (++p.i >= p.wp.length) { removePerson(p); continue; } }
+        else { pos.x += dx / d * st; pos.z += dz / d * st; let diff = Math.atan2(dx, dz) - p.yaw; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); p.yaw += diff * Math.min(1, dt * 9); p.root.rotation.y = p.yaw; }
+        p.ph += dt * p.speed * 3.6;
+        const sw = Math.sin(p.ph) * .75;
+        p.legL.rotation.x = sw; p.legR.rotation.x = -sw; p.armL.rotation.x = -sw * .8; p.armR.rotation.x = sw * .8;
+        p.body.position.y = Math.abs(Math.cos(p.ph)) * .07;
+      }
+    }
+
+    function resize() {
+      const w = host.clientWidth || 800, h = host.clientHeight || 400, a = w / h;
+      renderer.setSize(w, h, false); camera.aspect = a;
+      const halfW = a > 2.2 ? 14 : 9, dist = Math.max(halfW / (Math.tan(camera.fov * Math.PI / 360) * a), 13);
+      camera.userData.dist = dist; camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize); resize();
+
+    const clock = new THREE.Clock(); let running = false, tAcc = 0;
+    function frame() {
+      if (!running) return;
+      const dt = Math.min(clock.getDelta(), .05); tAcc += dt;
+      step(dt);
+      camera.position.set(Math.sin(tAcc * .18) * 1.6, 3.9, camera.userData.dist);
+      camera.lookAt(0, 3.1, 0);
+      renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    }
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {                                  // 減少動態：預先模擬後只繪製靜態畫面
+      for (let i = 0; i < 160; i++) step(.05);
+      camera.position.set(0, 3.9, camera.userData.dist); camera.lookAt(0, 3.1, 0); renderer.render(scene, camera);
+      window.addEventListener('resize', () => { resize(); renderer.render(scene, camera); });
+      return;
+    }
+    for (let i = 0; i < 100; i++) step(.05);       // 先暖機，一進頁面就有人潮
+    const vis = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting && !running) { running = true; clock.getDelta(); requestAnimationFrame(frame); } else if (!e.isIntersecting) running = false;
+    }), { threshold: 0 });
+    vis.observe(sec);
   })();
 
   /* ---------- Init ---------- */

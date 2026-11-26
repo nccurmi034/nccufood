@@ -3,131 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI3 南港美食 3D 午餐選擇器</title>
+<title>南港午餐決策器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-/* ===== 1. CSS Reset & Canvas 全螢幕佈局 ===== */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg1:#0b1020;--bg2:#1a1240;
-  --glass:rgba(255,255,255,.08);--glass-b:rgba(255,255,255,.18);
-  --txt:#f3f5ff;--sub:#aab2d5;--accent:#ffb547;--accent2:#ff5d8f;--ok:#3ddc97;
-  --side:340px;
-  --font:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC",system-ui,sans-serif;
+  --paper:#E9EFF5;--panel:#fff;--ink:#15202B;--sub:#566677;--line:#C6D3E0;--soft:#F2F6FA;
+  --blue:#2F5D8A;--go:#FF6A1A;--ok:#0F7A58;--bad:#B3261E;--side:360px;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
 }
-html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--txt);
-  background:radial-gradient(ellipse at 70% 30%,#2a1d63 0%,var(--bg2) 35%,var(--bg1) 80%)}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--ink);background:var(--paper)}
 #canvas-container{position:fixed;inset:0;z-index:0}
 #canvas-container canvas{display:block;touch-action:none;cursor:grab}
 #canvas-container canvas:active{cursor:grabbing}
-
-/* ===== 2. 控制面板 UI（Glassmorphism） ===== */
 #ui-container{position:fixed;inset:0;z-index:10;pointer-events:none}
-header{position:absolute;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:12px;
-  padding:0 22px;pointer-events:auto;background:linear-gradient(180deg,rgba(10,12,30,.75),rgba(10,12,30,0));}
-header .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:13px;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#1a1030;letter-spacing:.5px}
-header h1{font-size:19px;font-weight:700;letter-spacing:1px}
-header .sub{font-size:12px;color:var(--sub);margin-left:4px}
-.glass{background:var(--glass);border:1px solid var(--glass-b);backdrop-filter:blur(16px) saturate(140%);
-  -webkit-backdrop-filter:blur(16px) saturate(140%);box-shadow:0 10px 40px rgba(0,0,0,.35)}
-#sidebar{position:absolute;top:72px;left:18px;bottom:18px;width:var(--side);border-radius:20px;padding:20px 20px 18px;
-  pointer-events:auto;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
-#sidebar::-webkit-scrollbar{width:6px}#sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
-.sec-title{font-size:13px;color:var(--sub);letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+header{position:absolute;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:12px;padding:0 22px;pointer-events:auto}
+header .logo{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-weight:900;font-size:13px;background:var(--ink);color:#fff}
+header h1{font-size:19px;font-weight:900;letter-spacing:.5px}
+header .sub{font-size:13px;color:var(--sub)}
+.booking-link{margin-left:auto;display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);font-weight:700;font-size:14px;text-decoration:none;background:var(--panel)}
+.booking-link:hover{background:var(--ink);color:#fff}
+:where(a,button,input):focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);box-shadow:0 1px 0 var(--line)}
+#sidebar{position:absolute;top:68px;left:18px;bottom:18px;width:var(--side);border-radius:14px;padding:20px;pointer-events:auto;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:18px;padding-right:2px}
+.sec-title{font-size:14px;font-weight:700;margin-bottom:8px}
+.sec-title small{font-weight:400;color:var(--sub);margin-left:6px}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.seg input,.chips input,.switch input{display:none}
-.seg label{text-align:center;padding:9px 4px;border-radius:11px;font-size:13px;cursor:pointer;line-height:1.3;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:.2s}
-.seg label small{display:block;font-size:10px;color:var(--sub);margin-top:2px}
-.seg input:checked+label{background:linear-gradient(135deg,rgba(255,181,71,.9),rgba(255,93,143,.9));color:#1a1030;border-color:transparent;font-weight:700}
-.seg input:checked+label small{color:#3a1f40}
-.switch label{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;cursor:pointer;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:14px}
-.switch .knob{width:42px;height:24px;border-radius:12px;background:rgba(255,255,255,.18);position:relative;transition:.2s;flex:none}
-.switch .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.seg input,.chips input,.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label{text-align:center;padding:9px 4px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;line-height:1.3;background:var(--soft);border:1.5px solid var(--line)}
+.seg label small{display:block;font-size:11px;font-weight:400;color:var(--sub);margin-top:2px}
+.seg input:checked+label{background:var(--ink);border-color:var(--ink);color:#fff}
+.seg input:checked+label small{color:#C8D4E0}
+.seg input:focus-visible+label,.chips input:focus-visible+label,.switch input:focus-visible+label{outline:3px solid var(--blue);outline-offset:2px}
+.switch label{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;cursor:pointer;background:var(--soft);border:1.5px solid var(--line);font-size:15px}
+.switch .knob{width:42px;height:24px;border-radius:12px;background:#9FB0C0;position:relative;flex:none;transition:background .15s}
+.switch .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
 .switch input:checked+label .knob{background:var(--ok)}
 .switch input:checked+label .knob::after{left:21px}
 .chips{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.chips label{display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:11px;cursor:pointer;font-size:13px;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:.2s}
-.chips label i{width:16px;text-align:center;color:var(--sub)}
-.chips input:checked+label{background:rgba(61,220,151,.16);border-color:rgba(61,220,151,.6)}
-.chips input:checked+label i{color:var(--ok)}
+.chips label{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;font-size:14px;background:var(--soft);border:1.5px solid var(--line);color:var(--sub)}
+.chips label i{width:16px;text-align:center}
+.chips input:checked+label{background:#E3EEF9;border-color:var(--blue);color:var(--ink);font-weight:700}
+.chips input:checked+label i{color:var(--blue)}
 .mini-row{display:flex;gap:8px;margin-top:6px}
-.mini-row button{flex:1;background:none;border:1px dashed rgba(255,255,255,.22);color:var(--sub);border-radius:9px;padding:5px;font-size:12px;cursor:pointer;font-family:inherit}
-.mini-row button:hover{color:var(--txt);border-color:rgba(255,255,255,.5)}
-#count-box{border-radius:14px;padding:12px 14px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.08)}
-#count-box .num{font-size:28px;font-weight:800;color:var(--accent)}
-#count-box .lbl{font-size:13px;color:var(--sub)}
-#count-box.zero .num{color:#ff6b6b}
-#hint{font-size:12px;color:#ff8f8f;margin-top:4px;display:none}
+.mini-row button{flex:1;background:none;border:1.5px dashed var(--line);color:var(--sub);border-radius:9px;padding:6px;font-size:13px;cursor:pointer;font-family:inherit}
+.mini-row button:hover{color:var(--ink);border-color:var(--sub)}
+#count-box{border-radius:12px;padding:12px 14px;background:var(--soft);border:1px solid var(--line)}
+#count-box .num{font-size:26px;font-weight:900}
+#count-box .lbl{font-size:14px;color:var(--sub)}
+#count-box.zero .num{color:var(--bad)}
+#hint{font-size:13px;color:var(--bad);margin-top:4px;display:none}
 #count-box.zero #hint{display:block}
-#cand-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;max-height:110px;overflow-y:auto}
-#cand-list span{font-size:11px;padding:3px 8px;border-radius:20px;background:rgba(255,255,255,.07);color:#d7dcf5}
-#cand-list span.hit{background:var(--accent);color:#1a1030;font-weight:700}
-#spin-btn{margin-top:auto;border:none;border-radius:15px;padding:15px;font-size:17px;font-weight:800;letter-spacing:2px;cursor:pointer;
-  font-family:inherit;color:#1a1030;background:linear-gradient(135deg,var(--accent),var(--accent2));
-  box-shadow:0 8px 24px rgba(255,93,143,.35);transition:transform .15s,filter .2s,opacity .2s}
-#spin-btn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08)}
-#spin-btn:disabled{opacity:.38;cursor:not-allowed;box-shadow:none;filter:grayscale(.6)}
-.note{font-size:10.5px;color:rgba(170,178,213,.7);line-height:1.5}
+#cand-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;max-height:104px;overflow-y:auto}
+#cand-list span{font-size:12px;padding:3px 9px;border-radius:20px;background:#fff;border:1px solid var(--line)}
+#cand-list span.hit{background:var(--go);border-color:var(--go);color:var(--ink);font-weight:700}
+#spin-btn{flex:none;border:none;border-radius:12px;padding:15px;font-size:18px;font-weight:900;letter-spacing:1px;cursor:pointer;font-family:inherit;color:var(--ink);background:var(--go);transition:transform .12s}
+#spin-btn:hover:not(:disabled){transform:translateY(-1px)}
+#spin-btn:disabled{background:#D5DEE7;color:#7C8B99;cursor:not-allowed}
+.note{font-size:12px;color:var(--sub);line-height:1.5}
 fieldset{border:none}
 fieldset:disabled{opacity:.55;pointer-events:none}
 
-/* ===== 3. 結果彈窗與按鈕樣式 ===== */
-#result-modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(5,6,18,.45);
-  transition:opacity .3s;opacity:1}
+#result-modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(21,32,43,.45);transition:opacity .25s;opacity:1}
 #result-modal.hidden{opacity:0;pointer-events:none}
-#result-modal .card{width:min(420px,92vw);border-radius:24px;padding:26px 24px 22px;text-align:center;
-  transform:translateY(0) scale(1);transition:transform .35s cubic-bezier(.2,1.4,.4,1);background:rgba(28,22,70,.72)}
-#result-modal.hidden .card{transform:translateY(30px) scale(.9)}
-.card .badge{display:inline-block;font-size:12px;letter-spacing:2px;color:#1a1030;background:var(--accent);padding:4px 12px;border-radius:20px;font-weight:700}
-.card h2{font-size:26px;margin:14px 0 8px;line-height:1.35}
-.card .dist{color:var(--sub);font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
-.card .addr{color:rgba(170,178,213,.8);font-size:12px;margin-top:6px}
+#result-modal .card{width:min(420px,92vw);border-radius:16px;padding:34px 24px 22px;text-align:center;transition:transform .3s cubic-bezier(.2,1.3,.4,1);background:var(--panel);border:1px solid var(--line);box-shadow:inset 0 8px 0 var(--go)}
+#result-modal.hidden .card{transform:translateY(24px) scale(.96)}
+.card .badge{display:inline-block;font-size:13px;color:var(--ink);background:var(--go);padding:4px 12px;border-radius:20px;font-weight:700}
+.card h2{font-size:28px;font-weight:900;margin:14px 0 8px;line-height:1.3}
+.card .dist{color:var(--ink);font-size:15px;font-weight:700;display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.card .addr{color:var(--sub);font-size:13px;margin-top:6px}
 .card .tags{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:16px 0 20px}
-.card .tags span{font-size:12px;padding:5px 11px;border-radius:20px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15)}
-.card .tags span.ac{border-color:rgba(61,220,151,.6);color:#7ff0bf}
-.card .tags span.noac{border-color:rgba(255,140,100,.6);color:#ffb39a}
+.card .tags span{font-size:13px;padding:4px 11px;border-radius:20px;background:var(--soft);border:1px solid var(--line)}
+.card .tags span.ac{border-color:var(--ok);color:var(--ok)}
+.card .tags span.noac{border-color:var(--bad);color:var(--bad)}
 .card .actions{display:grid;gap:9px}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:13px;font-size:15px;font-weight:700;
-  cursor:pointer;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--txt);text-decoration:none;font-family:inherit;transition:.2s}
-.btn:hover{background:rgba(255,255,255,.14)}
-.btn.primary{background:linear-gradient(135deg,#4f8cff,#3ddc97);border:none;color:#08121f}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);text-decoration:none;font-family:inherit}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.primary:hover{background:#243545}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-
 #webgl-error{position:fixed;inset:0;display:none;place-items:center;z-index:15;text-align:center;padding:30px;font-size:15px;color:var(--sub)}
 
-.booking-link {
-  position: fixed;
-  right: calc(18px + env(safe-area-inset-right, 0px));
-  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-  z-index: 20;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 20px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #1a1030;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.booking-link:hover { filter: brightness(1.1); }
-.booking-link:focus-visible { outline: 2px solid var(--txt); outline-offset: 3px; }
-
-/* ===== RWD：窄螢幕改為底部面板 ===== */
 @media (max-width:760px){
-  :root{--side:100%}
-  header{height:52px;padding:0 14px}header h1{font-size:16px}header .sub{display:none}
-  #sidebar{top:auto;left:8px;right:8px;bottom:calc(76px + env(safe-area-inset-bottom, 0px));width:auto;max-height:min(48vh, calc(100% - 128px - env(safe-area-inset-bottom, 0px)));padding:14px;gap:12px;border-radius:18px}
-  #spin-btn{position:sticky;bottom:0;padding:13px}
+  header{height:52px;padding:0 14px;gap:8px}header h1{font-size:16px}header .sub{display:none}
+  #sidebar{top:auto;left:0;right:0;bottom:0;width:auto;height:52vh;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));gap:12px;border-radius:16px 16px 0 0;border-bottom:none}
+  #spin-btn{padding:14px}
   #cand-list{max-height:60px}
+  .note{display:none}
 }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <!-- 引進 Three.js CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -140,29 +106,31 @@ fieldset:disabled{opacity:.55;pointer-events:none}
 <div id="ui-container">
   <header>
     <div class="logo">AI3</div>
-    <h1>AI3 南港午餐 3D 決策器</h1>
-    <span class="sub">以南港軟體園區為中心・半徑 2 公里</span>
+    <h1>南港午餐決策器</h1>
+    <span class="sub">軟體園區出發，步行 25 分鐘內</span>
+    <a class="booking-link" href="https://calendar.app.google/h1y5Gq49ZpJyVqocA">預約</a>
   </header>
 
-  <aside id="sidebar" class="glass">
+  <aside id="sidebar" class="panel">
+    <div class="scroll">
     <fieldset id="filters">
       <div>
-        <div class="sec-title"><i class="fa-solid fa-person-walking"></i>距離選擇</div>
+        <div class="sec-title">距離</div>
         <div class="seg">
-          <input type="radio" name="dist" id="d500" value="500"><label for="d500">500m<small>園區內・步行5分</small></label>
-          <input type="radio" name="dist" id="d1000" value="1000"><label for="d1000">1km<small>展覽館周邊</small></label>
-          <input type="radio" name="dist" id="d2000" value="2000" checked><label for="d2000">2km<small>南港站/研究院路</small></label>
+          <input type="radio" name="dist" id="d500" value="500"><label for="d500">步行 6 分<small>500 公尺・園區內</small></label>
+          <input type="radio" name="dist" id="d1000" value="1000"><label for="d1000">步行 12 分<small>1 公里・展覽館</small></label>
+          <input type="radio" name="dist" id="d2000" value="2000" checked><label for="d2000">步行 25 分<small>2 公里・南港站</small></label>
         </div>
       </div>
       <div style="margin-top:16px">
-        <div class="sec-title"><i class="fa-solid fa-snowflake"></i>環境條件</div>
+        <div class="sec-title">環境</div>
         <div class="switch">
           <input type="checkbox" id="ac" checked>
           <label for="ac"><span>必須有冷氣</span><span class="knob"></span></label>
         </div>
       </div>
       <div style="margin-top:16px">
-        <div class="sec-title"><i class="fa-solid fa-utensils"></i>種類（複選）</div>
+        <div class="sec-title">種類<small>可複選</small></div>
         <div class="chips" id="food-chips"></div>
         <div class="mini-row"><button type="button" id="all-on">全選</button><button type="button" id="all-off">全不選</button></div>
       </div>
@@ -174,17 +142,17 @@ fieldset:disabled{opacity:.55;pointer-events:none}
       <div id="cand-list"></div>
     </div>
 
-    <button id="spin-btn"><i class="fa-solid fa-dice"></i> 決定吃什麼！</button>
+    </div>
+    <button id="spin-btn">決定吃什麼</button>
     <div class="note">距離為自南港軟體園區（三重路）起算的估計步行距離；冷氣與價位為預設資料，可於原始碼頂端 RESTAURANTS 陣列修改。</div>
   </aside>
 </div>
 
-<a class="booking-link" href="https://calendar.app.google/h1y5Gq49ZpJyVqocA">預約</a>
 
 <!-- 結果彈窗層 -->
 <div id="result-modal" class="hidden">
-  <div class="card glass">
-    <span class="badge">今天就吃這家</span>
+  <div class="card">
+    <span class="badge">今天吃這家</span>
     <h2 id="r-name">—</h2>
     <div class="dist" id="r-dist"></div>
     <div class="addr" id="r-addr"></div>
@@ -259,31 +227,27 @@ const FOV = 38;
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 0, 12);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
 dirLight.position.set(4, 6, 10);
 dirLight.castShadow = true;
 scene.add(dirLight);
-const rimLight = new THREE.PointLight(0xff5d8f, 0.8, 30);
+const rimLight = new THREE.PointLight(0xffffff, 0.3, 30);
 rimLight.position.set(-6, -4, 6);
 scene.add(rimLight);
-const rimLight2 = new THREE.PointLight(0x4f8cff, 0.7, 30);
+const rimLight2 = new THREE.PointLight(0xffffff, 0.3, 30);
 rimLight2.position.set(6, -3, 4);
 scene.add(rimLight2);
 
-// 背景星點
-(function addStars(){
-  const g = new THREE.BufferGeometry(), n = 600, pos = new Float32Array(n*3);
-  for (let i=0;i<n;i++){ pos[i*3]=(Math.random()-.5)*60; pos[i*3+1]=(Math.random()-.5)*40; pos[i*3+2]=-10-Math.random()*20; }
-  g.setAttribute("position", new THREE.BufferAttribute(pos,3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({color:0xaab2ff,size:0.08,transparent:true,opacity:.7})));
-})();
 
 /* =========================================================
  * 3. 動態 3D 輪盤生成邏輯（Canvas 動態繪製文字貼圖）
  * ========================================================= */
 const R_OUT = 3.4, R_IN = 0.75, DEPTH = 0.32;
-const PALETTE = [0xff6b6b,0xffb547,0xffe066,0x3ddc97,0x4fd1ff,0x4f8cff,0x9b7bff,0xff5d8f];
+const PALETTE = [0xff6a1a,0x15202b,0x2f5d8a,0x12a37a,0xffd23f];   // 彩帶
+const SEG = [0xD3E1EF,0xB7CDE3,0xE4EDF6];   // 扇區：冷灰藍，中獎者才用橘色
+const GO = 0xff6a1a;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const tiltGroup = new THREE.Group();   // 整體傾斜（可拖曳）
 const spinGroup = new THREE.Group();   // 會轉動的輪盤本體
@@ -292,28 +256,27 @@ scene.add(tiltGroup);
 tiltGroup.rotation.x = -0.32;
 
 // 固定元件：外框、中心軸、指針
-const rimMat = new THREE.MeshStandardMaterial({color:new THREE.Color(0xf2d38a).convertSRGBToLinear(), metalness:.85, roughness:.25});
+const rimMat = new THREE.MeshStandardMaterial({color:new THREE.Color(0x15202b).convertSRGBToLinear(), metalness:.5, roughness:.4});
 const rim = new THREE.Mesh(new THREE.TorusGeometry(R_OUT + 0.12, 0.14, 20, 120), rimMat);
 rim.position.z = DEPTH/2;
 tiltGroup.add(rim);
 
 const base = new THREE.Mesh(new THREE.CylinderGeometry(R_OUT+0.3, R_OUT+0.45, 0.25, 96),
-  new THREE.MeshStandardMaterial({color:0x221a4a, metalness:.4, roughness:.6}));
+  new THREE.MeshStandardMaterial({color:0xaebfd0, metalness:.2, roughness:.7}));
 base.rotation.x = Math.PI/2; base.position.z = -0.2;
 tiltGroup.add(base);
 
 const hub = new THREE.Mesh(new THREE.CylinderGeometry(R_IN*0.95, R_IN, DEPTH+0.35, 48),
-  new THREE.MeshStandardMaterial({color:0x2b2160, metalness:.6, roughness:.3}));
+  new THREE.MeshStandardMaterial({color:0x15202b, metalness:.4, roughness:.4}));
 hub.rotation.x = Math.PI/2; hub.position.z = DEPTH/2 + 0.1;
 tiltGroup.add(hub);
 const hubLabel = (() => {
   const c = document.createElement("canvas"); c.width = c.height = 256;
   const x = c.getContext("2d");
-  const grd = x.createLinearGradient(0,0,256,256); grd.addColorStop(0,"#ffb547"); grd.addColorStop(1,"#ff5d8f");
-  x.fillStyle = grd; x.beginPath(); x.arc(128,128,124,0,Math.PI*2); x.fill();
-  x.fillStyle = "#1a1030"; x.font = "800 86px " + getComputedStyle(document.body).fontFamily;
-  x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("AI3",128,120);
-  x.font = "700 30px " + getComputedStyle(document.body).fontFamily; x.fillText("LUNCH",128,180);
+  x.fillStyle = "#15202B"; x.beginPath(); x.arc(128,128,124,0,Math.PI*2); x.fill();
+  x.fillStyle = "#fff"; x.font = "900 96px " + getComputedStyle(document.body).fontFamily;
+  x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("午休",128,120);
+  x.font = "700 30px " + getComputedStyle(document.body).fontFamily; x.fillStyle="#FF6A1A"; x.fillText("12:00",128,182);
   const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
   const m = new THREE.Mesh(new THREE.CircleGeometry(R_IN*0.88, 48), new THREE.MeshBasicMaterial({map:t, transparent:true}));
   m.position.z = DEPTH + 0.29; return m;
@@ -325,7 +288,7 @@ const pointer = new THREE.Group();
 const pShape = new THREE.Shape();
 pShape.moveTo(0,-0.55); pShape.lineTo(0.32,0.15); pShape.quadraticCurveTo(0,0.5,-0.32,0.15); pShape.lineTo(0,-0.55);
 const pMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(pShape,{depth:0.22,bevelEnabled:true,bevelThickness:.04,bevelSize:.04,bevelSegments:3}),
-  new THREE.MeshStandardMaterial({color:new THREE.Color(0xff3b6b).convertSRGBToLinear(), metalness:.4, roughness:.3, emissive:0x200008}));
+  new THREE.MeshStandardMaterial({color:new THREE.Color(0xff6a1a).convertSRGBToLinear(), metalness:.4, roughness:.3, emissive:0x000000}));
 pointer.add(pMesh);
 const pDot = new THREE.Mesh(new THREE.SphereGeometry(0.1,16,16), rimMat);
 pDot.position.set(0,0.12,0.3); pointer.add(pDot);
@@ -340,13 +303,13 @@ function makeLabelTexture(text, sub){
   const c = document.createElement("canvas"); c.width = 640; c.height = 128;
   const x = c.getContext("2d");
   const ff = getComputedStyle(document.body).fontFamily;
-  x.fillStyle = "#1a1030";
+  x.fillStyle = "#15202B";
   const ax = 320;
   x.textAlign = "center"; x.textBaseline = "middle";
   let size = 58;
   x.font = `800 ${size}px ${ff}`;
   while (x.measureText(text).width > 600 && size > 22){ size -= 2; x.font = `800 ${size}px ${ff}`; }
-  x.shadowColor = "rgba(255,255,255,.55)"; x.shadowBlur = 6;
+  
   x.fillText(text, ax, sub ? 52 : 64);
   if (sub){ x.font = `600 26px ${ff}`; x.globalAlpha = .8; x.fillText(sub, ax, 100); }
   const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
@@ -365,7 +328,7 @@ function buildWheel(items){
 
   if (!items.length){
     const g = new THREE.RingGeometry(R_IN, R_OUT, 96);
-    const m = new THREE.MeshStandardMaterial({color:0x3a3366, roughness:.8, transparent:true, opacity:.7});
+    const m = new THREE.MeshStandardMaterial({color:0xc6d3e0, roughness:.8});
     disposables.push(g, m);
     const mesh = new THREE.Mesh(g, m); mesh.position.z = DEPTH; spinGroup.add(mesh);
     return;
@@ -386,14 +349,14 @@ function buildWheel(items){
       shape.absarc(0,0,R_IN,a1,a0,true);
     }
     const geo = new THREE.ExtrudeGeometry(shape,{depth:DEPTH, bevelEnabled:true, bevelThickness:.03, bevelSize:.025, bevelSegments:2, curveSegments:Math.max(6, Math.ceil(64/n))});
-    let color = PALETTE[i % PALETTE.length];
-    if (n % PALETTE.length === 1 && i === n - 1) color = PALETTE[(i + 3) % PALETTE.length]; // 避免首尾同色
+    let color = SEG[i % SEG.length];
+    if (n % SEG.length === 1 && i === n - 1) color = SEG[1];   // 避免首尾同色
     const lin = new THREE.Color(color).convertSRGBToLinear();
     const mat = new THREE.MeshStandardMaterial({color:lin, metalness:.15, roughness:.5, emissive:lin, emissiveIntensity:0});
     disposables.push(geo, mat);
     const seg = new THREE.Mesh(geo, mat);
     seg.castShadow = true; seg.receiveShadow = true;
-    seg.userData.index = i;
+    seg.userData.index = i; seg.userData.base = lin.clone();
     spinGroup.add(seg);
 
     // 文字貼圖（沿半徑方向排列，文字靠外緣對齊）
@@ -495,7 +458,7 @@ function startSpin(excludeLast){
   spinBtn.disabled = true;
   document.getElementById("filters").disabled = true;
   document.querySelectorAll("#cand-list span").forEach(s => s.classList.remove("hit"));
-  spinGroup.children.forEach(c => { if (c.userData.index !== undefined) c.material.emissiveIntensity = 0; });
+  spinGroup.children.forEach(c => { if (c.userData.index !== undefined) c.material.color.copy(c.userData.base); });
 }
 
 function finishSpin(){
@@ -504,9 +467,9 @@ function finishSpin(){
   lastPickId = r.id;
   document.getElementById("filters").disabled = false;
   spinBtn.disabled = false;
-  spinGroup.children.forEach(c => { if (c.userData.index === targetIndex) c.material.emissiveIntensity = 0.35; });
+  spinGroup.children.forEach(c => { if (c.userData.index === targetIndex) c.material.color.set(GO).convertSRGBToLinear(); });
   const chip = document.querySelector(`#cand-list span[data-id="${r.id}"]`); if (chip) chip.classList.add("hit");
-  burstConfetti();
+  if (!reduceMotion) burstConfetti();
   setTimeout(() => showResult(r), 650);
 }
 
@@ -568,7 +531,7 @@ function animate(){
     const k = Math.min((performance.now() - spinStart) / SPIN_MS, 1);
     spinGroup.rotation.z = spinFrom + (spinTo - spinFrom) * easeOutQuart(k);
     if (k >= 1){ spinGroup.rotation.z = spinTo; finishSpin(); }
-  } else if (!modalOpen()){
+  } else if (!modalOpen() && !reduceMotion){
     spinGroup.rotation.z += dt * 0.12;          // 待機微弱旋轉
   }
 
@@ -589,9 +552,9 @@ function animate(){
 
   // 傾斜跟隨 + 呼吸擺動
   if (!dragging){ tiltTarget.x += (-0.32 - tiltTarget.x) * dt * 0.6; tiltTarget.y += (0 - tiltTarget.y) * dt * 0.6; }
-  tiltGroup.rotation.x += (tiltTarget.x + Math.sin(t * 0.7) * 0.03 - tiltGroup.rotation.x) * Math.min(1, dt * 6);
-  tiltGroup.rotation.y += (tiltTarget.y + Math.sin(t * 0.5) * 0.05 - tiltGroup.rotation.y) * Math.min(1, dt * 6);
-  tiltGroup.position.y = Math.sin(t * 1.1) * 0.06;
+  tiltGroup.rotation.x += (tiltTarget.x + (reduceMotion?0:Math.sin(t * 0.7) * 0.03) - tiltGroup.rotation.x) * Math.min(1, dt * 6);
+  tiltGroup.rotation.y += (tiltTarget.y + (reduceMotion?0:Math.sin(t * 0.5) * 0.05) - tiltGroup.rotation.y) * Math.min(1, dt * 6);
+  tiltGroup.position.y = reduceMotion ? 0 : Math.sin(t * 1.1) * 0.06;
 
   updateConfetti(dt);
   renderer.render(scene, camera);
@@ -645,7 +608,7 @@ document.getElementById("r-refilter").addEventListener("click", () => {
   hideModal();
   const sb = document.getElementById("sidebar");
   sb.scrollTo({top:0, behavior:"smooth"});
-  sb.animate([{boxShadow:"0 0 0 0 rgba(255,181,71,.0)"},{boxShadow:"0 0 0 4px rgba(255,181,71,.7)"},{boxShadow:"0 0 0 0 rgba(255,181,71,.0)"}],{duration:900});
+  sb.animate([{boxShadow:"0 0 0 0 rgba(255,106,26,0)"},{boxShadow:"0 0 0 4px rgba(255,106,26,.9)"},{boxShadow:"0 0 0 0 rgba(255,106,26,0)"}],{duration:900});
 });
 modal.addEventListener("click", e => { if (e.target === modal) hideModal(); });
 document.addEventListener("keydown", e => {
